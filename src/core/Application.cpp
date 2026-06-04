@@ -3,7 +3,7 @@
 #include <fstream>
 #include <sstream>
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
@@ -155,7 +155,8 @@ bool Application::InitializeWindow()
 
 bool Application::InitializeOpenGL()
 {
-    if (gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) == 0) {
+    if (gladLoadGL(reinterpret_cast<GLADloadfunc>(glfwGetProcAddress)) == 0)
+    {
         return false;
     }
 

@@ -21,7 +21,7 @@ if(NOT EXISTS "${CMAKE_SOURCE_DIR}/external/glfw/CMakeLists.txt")
     message(FATAL_ERROR "Missing GLFW. Vendor it to external/glfw")
 endif()
 
-if(NOT EXISTS "${CMAKE_SOURCE_DIR}/external/glad/include/glad/glad.h")
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/external/glad/include/glad/gl.h")
     message(FATAL_ERROR "Missing GLAD. Vendor it to external/glad")
 endif()
 

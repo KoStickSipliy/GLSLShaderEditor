@@ -1,0 +1,46 @@
+# ninja log v7
+75	162	8023092026720984	C:/Users/linar/Desktop/Куры и совы/GLSLShaderEditor/out/build/x64-Debug/CMakeFiles/cmake.verify_globs	27a059af2c273009
+284	1700	8023090420530312	external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.obj	a638cd4bf0a2672d
+322	1744	8023090420916015	external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.obj	5e80ee2e624bf0af
+265	1756	8023090420339032	external/glfw/src/CMakeFiles/glfw.dir/platform.c.obj	950d5e09b8c3b69b
+303	1799	8023090420717531	external/glfw/src/CMakeFiles/glfw.dir/window.c.obj	1c65a69f2e42a6f5
+226	1811	8023090419940979	external/glfw/src/CMakeFiles/glfw.dir/input.c.obj	61af159219041203
+245	1855	8023090420140801	external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj	4e75b78fafeb9af1
+210	1868	8023090419702356	external/glfw/src/CMakeFiles/glfw.dir/init.c.obj	e3f6af2424bd3e6f
+342	1882	8023090421119283	external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.obj	d67d0258d3031584
+192	1985	8023090419615087	external/glfw/src/CMakeFiles/glfw.dir/context.c.obj	45eeb10572a7836f
+138	1131	8023090676203129	external/glfw/src/CMakeFiles/glfw.dir/null_init.c.obj	2ae465043334c06a
+233	1210	8023090677178486	external/glfw/src/CMakeFiles/glfw.dir/win32_time.c.obj	8d3bf3b9855dfed5
+251	1242	8023090677316828	external/glfw/src/CMakeFiles/glfw.dir/win32_thread.c.obj	ed90ccecf1eea0f3
+197	1276	8023090676813605	external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj	a015201629929988
+155	1309	8023090676422843	external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.obj	b23ca49b1fbb0584
+216	1342	8023090677033647	external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj	f5b46c73df7bf6eb
+174	1378	8023090676597223	external/glfw/src/CMakeFiles/glfw.dir/null_window.c.obj	39db8d990f716d9c
+123	1411	8023090676099015	CMakeFiles/glad.dir/external/glad/src/glad.c.obj	d0c14812844a9694
+270	1452	8023090677506155	external/glfw/src/CMakeFiles/glfw.dir/win32_init.c.obj	8046ae214e5c1112
+289	2151	8023090677745918	external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj	aaefd07faadd5e18
+1215	2703	8023090687018797	external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj	b6682bbdb3b2e1cf
+1249	2959	8023090687361213	external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj	f04f091d2d1818d
+1141	3024	8023090686302351	external/glfw/src/CMakeFiles/glfw.dir/win32_monitor.c.obj	534b2cd2edf905ad
+1418	3747	8023090689056842	glad.lib	c91d0cf618fbf2f6
+1385	3770	8023090688723753	CMakeFiles/imgui.dir/external/imgui/imgui_tables.cpp.obj	365d0f77e3a5ee62
+1315	4088	8023090688021168	CMakeFiles/imgui.dir/external/imgui/imgui_demo.cpp.obj	ec2d4cd2c9209c41
+1349	4130	8023090688371738	CMakeFiles/imgui.dir/external/imgui/imgui_draw.cpp.obj	2122a97ab56c42e4
+2708	4356	8023090701945572	CMakeFiles/imgui.dir/external/imgui/backends/imgui_impl_opengl3.cpp.obj	17b16788ecbda6f6
+1459	4494	8023090689453133	CMakeFiles/imgui.dir/external/imgui/imgui_widgets.cpp.obj	484323e8effc3220
+3031	4851	8023090705185932	external/glfw/src/glfw3.lib	e38e2198900bdf9f
+2158	4940	8023090696453641	CMakeFiles/imgui.dir/external/imgui/backends/imgui_impl_glfw.cpp.obj	554bfbccc8c5253a
+1282	5149	8023090687692216	CMakeFiles/imgui.dir/external/imgui/imgui.cpp.obj	401dfbc629e2553e
+4496	6173	8023090719833299	CMakeFiles/GLSLShaderEditor.dir/src/gui/EditorLayout.cpp.obj	dd27eefe6b0acb61
+153	527	8023091450118546	imgui.lib	16fefca358f6e723
+226	593	8023091450838044	CMakeFiles/GLSLShaderEditor.dir/src/graphics/VertexArray.cpp.obj	71c6ab08a641055b
+240	631	8023091450989055	CMakeFiles/GLSLShaderEditor.dir/src/graphics/VertexBuffer.cpp.obj	914c98b999c5249f
+212	1675	8023091450719283	CMakeFiles/GLSLShaderEditor.dir/src/graphics/ShaderProgram.cpp.obj	fdddafde44c51a56
+198	1683	8023091450570553	CMakeFiles/GLSLShaderEditor.dir/src/graphics/Shader.cpp.obj	6393eb088d0d186e
+190	873	8023092027888518	CMakeFiles/GLSLShaderEditor.dir/src/graphics/FullscreenQuad.cpp.obj	8aa2c38bad9f2099
+29	90	8023097356643073	C:/Users/linar/Desktop/Куры и совы/GLSLShaderEditor/out/build/x64-Debug/CMakeFiles/cmake.verify_globs	27a059af2c273009
+49	116	8023099644976863	C:/Users/linar/Desktop/Куры и совы/GLSLShaderEditor/out/build/x64-Debug/CMakeFiles/cmake.verify_globs	27a059af2c273009
+142	1571	8023099645792651	CMakeFiles/GLSLShaderEditor.dir/src/main.cpp.obj	4110e28822f2010e
+63	140	8023103502772069	C:/Users/linar/Desktop/Куры и совы/GLSLShaderEditor/out/build/x64-Debug/CMakeFiles/cmake.verify_globs	27a059af2c273009
+157	1948	8023103503717887	CMakeFiles/GLSLShaderEditor.dir/src/core/Application.cpp.obj	c018f7ceee678976
+1954	3437	8023103521667626	GLSLShaderEditor.exe	7463cfb658942c3f

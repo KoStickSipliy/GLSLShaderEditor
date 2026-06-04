@@ -1,0 +1,19 @@
+{
+  "OutputFoldersPerTargetSystem": {
+    "Local Machine": [
+      "out\\build\\x64-Debug",
+      "out\\install\\x64-Debug"
+    ]
+  },
+  "ExpandedNodes": [
+    "",
+    "\\external",
+    "\\external\\glad",
+    "\\external\\glad\\include",
+    "\\external\\glad\\include\\glad",
+    "\\src",
+    "\\src\\graphics"
+  ],
+  "SelectedNode": "\\external\\glad\\include\\glad\\gl.h",
+  "PreviewInSolutionExplorer": false
+}
