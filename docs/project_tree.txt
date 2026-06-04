@@ -1,0 +1,17 @@
+project_root/
+|-- CMakeLists.txt
+|-- external/
+|-- assets/
+|-- shaders/
+|-- config/
+|-- src/
+|   |-- core/
+|   |-- graphics/
+|   |-- gui/
+|   |-- editor/
+|   |-- shader/
+|   |-- io/
+|   |-- utils/
+|   `-- main.cpp
+|-- include/
+`-- docs/
