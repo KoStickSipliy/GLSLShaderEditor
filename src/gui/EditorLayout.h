@@ -26,11 +26,14 @@ struct EditorLayoutState {
     bool requestResetTimer = false;
     bool requestTogglePlayback = false;
     bool requestRecompile = false;
+
+    int sceneViewportWidth = 1;
+    int sceneViewportHeight = 1;
 };
 
 class EditorLayout {
 public:
-    void Render(EditorLayoutState& state, float timeSeconds, float fps, int viewportWidth, int viewportHeight, std::uint64_t frameIndex);
+    void Render(EditorLayoutState& state, float timeSeconds, float fps, std::uint64_t frameIndex);
 };
 
 } // namespace gui

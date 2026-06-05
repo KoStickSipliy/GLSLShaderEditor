@@ -4,7 +4,7 @@
 
 namespace gui {
 
-void EditorLayout::Render(EditorLayoutState& state, float timeSeconds, float fps, int viewportWidth, int viewportHeight, std::uint64_t frameIndex)
+void EditorLayout::Render(EditorLayoutState& state, float timeSeconds, float fps, std::uint64_t frameIndex)
 {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->Pos);
@@ -23,14 +23,18 @@ void EditorLayout::Render(EditorLayoutState& state, float timeSeconds, float fps
         if (ImGui::BeginTabItem("Scene")) {
             state.currentTab = 0;
 
-            const float controlPanelHeight = 230.0f;
+            const float controlPanelHeight = 200.0f;
             ImGui::BeginChild("SceneViewportOverlay", ImVec2(0.0f, -controlPanelHeight), true, ImGuiWindowFlags_NoBackground);
             {
                 ImDrawList* drawList = ImGui::GetWindowDrawList();
                 const ImVec2 minPos = ImGui::GetWindowPos();
                 const ImVec2 maxPos = ImVec2(minPos.x + ImGui::GetWindowSize().x, minPos.y + ImGui::GetWindowSize().y);
+                drawList->AddRectFilled(minPos, maxPos, IM_COL32(0, 0, 0, 22));
                 drawList->AddRect(minPos, maxPos, IM_COL32(255, 255, 255, 90), 0.0f, 0, 1.5f);
-                drawList->AddText(ImVec2(minPos.x + 12.0f, minPos.y + 10.0f), IM_COL32(255, 255, 255, 230), "OpenGL Scene Output");
+                drawList->AddText(ImVec2(minPos.x + 12.0f, minPos.y + 10.0f), IM_COL32(255, 255, 255, 230), "Scene Viewport");
+
+                state.sceneViewportWidth = static_cast<int>((maxPos.x - minPos.x) > 1.0f ? (maxPos.x - minPos.x) : 1.0f);
+                state.sceneViewportHeight = static_cast<int>((maxPos.y - minPos.y) > 1.0f ? (maxPos.y - minPos.y) : 1.0f);
             }
             ImGui::EndChild();
 
@@ -43,15 +47,20 @@ void EditorLayout::Render(EditorLayoutState& state, float timeSeconds, float fps
                 state.requestTogglePlayback = true;
             }
             ImGui::SameLine();
-            if (ImGui::Button("Recompile")) {
+            if (ImGui::Button("Compile")) {
                 state.requestRecompile = true;
             }
 
             ImGui::Separator();
-            ImGui::Text("Status: %s", state.compileStatus.c_str());
+            ImVec4 statusColor = ImVec4(0.70f, 0.90f, 0.70f, 1.0f);
+            if (state.compileStatus.find("failed") != std::string::npos || state.compileStatus.find("error") != std::string::npos ||
+                state.compileStatus.find("Failed") != std::string::npos || state.compileStatus.find("Error") != std::string::npos) {
+                statusColor = ImVec4(1.0f, 0.45f, 0.45f, 1.0f);
+            }
+            ImGui::TextColored(statusColor, "Status: %s", state.compileStatus.c_str());
             ImGui::Text("Compile: %.3f ms", state.compileDurationMs);
             ImGui::Text("Time: %.3f", timeSeconds);
-            ImGui::Text("Resolution: %d x %d", viewportWidth, viewportHeight);
+            ImGui::Text("Resolution: %d x %d", state.sceneViewportWidth, state.sceneViewportHeight);
             ImGui::Text("FPS: %.1f", fps);
             ImGui::Text("Frame: %llu", static_cast<unsigned long long>(frameIndex));
 

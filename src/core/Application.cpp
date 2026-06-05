@@ -154,6 +154,7 @@ bool Application::InitializeImGui()
 bool Application::CreateScenePipeline()
 {
     const shader::PreparedFragmentSource prepared = shaderCompiler_.BuildBuiltInPreparedSource();
+    currentShaderSource_ = shaderCompiler_.BuiltInTestShader();
 
     std::string compileLog;
     if (!quadRenderer_.Initialize(prepared.generatedSource, compileLog)) {
@@ -169,6 +170,8 @@ bool Application::CreateScenePipeline()
     uiState_.compileLogs.clear();
     uiState_.compileDurationMs = 0.0;
     uiState_.sourceCharacterCount = prepared.userCharacterCount;
+    uiState_.sceneViewportWidth = framebufferWidth_;
+    uiState_.sceneViewportHeight = framebufferHeight_;
     return true;
 }
 
@@ -184,10 +187,23 @@ void Application::ProcessInput()
         glfwGetKey(window_, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
         glfwGetKey(window_, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
     const bool compileChordPressed = ctrlPressed && (glfwGetKey(window_, GLFW_KEY_F5) == GLFW_PRESS);
+    const bool playbackChordPressed = ctrlPressed && (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS);
+    const bool resetChordPressed = ctrlPressed && (glfwGetKey(window_, GLFW_KEY_T) == GLFW_PRESS);
+
     if (compileChordPressed && !recompileHotkeyDown_) {
         uiState_.requestRecompile = true;
     }
     recompileHotkeyDown_ = compileChordPressed;
+
+    if (playbackChordPressed && !playbackHotkeyDown_) {
+        uiState_.requestTogglePlayback = true;
+    }
+    playbackHotkeyDown_ = playbackChordPressed;
+
+    if (resetChordPressed && !resetHotkeyDown_) {
+        uiState_.requestResetTimer = true;
+    }
+    resetHotkeyDown_ = resetChordPressed;
 }
 
 void Application::UpdateTimers()
@@ -223,7 +239,7 @@ void Application::UpdateState()
 
         std::string userFragment = ReadUtf8TextFile("shaders/default.glsl");
         if (userFragment.empty()) {
-            userFragment = shaderCompiler_.BuiltInTestShader();
+            userFragment = currentShaderSource_.empty() ? shaderCompiler_.BuiltInTestShader() : currentShaderSource_;
         }
 
         const shader::CompileReport report = shaderCompiler_.CompileAndHotSwap(userFragment);
@@ -235,12 +251,22 @@ void Application::UpdateState()
 
         if (!report.success) {
             uiState_.currentTab = 2;
+        } else {
+            currentShaderSource_ = userFragment;
         }
     }
 }
 
 void Application::UpdateUniforms()
 {
+    renderState_.iTime = iTime_;
+    renderState_.iDeltaTime = iDeltaTime_;
+    renderState_.iFrame = static_cast<int>(iFrame_);
+    renderState_.iResolutionX = static_cast<float>(uiState_.sceneViewportWidth > 0 ? uiState_.sceneViewportWidth : framebufferWidth_);
+    renderState_.iResolutionY = static_cast<float>(uiState_.sceneViewportHeight > 0 ? uiState_.sceneViewportHeight : framebufferHeight_);
+    renderState_.param1 = uiState_.param1;
+    renderState_.param2 = uiState_.param2;
+    renderState_.param3 = uiState_.param3;
 }
 
 void Application::RenderScene()
@@ -250,17 +276,7 @@ void Application::RenderScene()
     glClearColor(0.08f, 0.10f, 0.12f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    graphics::FullscreenQuadRenderState state;
-    state.iTime = iTime_;
-    state.iDeltaTime = iDeltaTime_;
-    state.iFrame = static_cast<int>(iFrame_);
-    state.iResolutionX = static_cast<float>(framebufferWidth_);
-    state.iResolutionY = static_cast<float>(framebufferHeight_);
-    state.param1 = uiState_.param1;
-    state.param2 = uiState_.param2;
-    state.param3 = uiState_.param3;
-
-    quadRenderer_.Render(state);
+    quadRenderer_.Render(renderState_);
     ConsumeOpenGLErrors("RenderScene");
 }
 
@@ -271,7 +287,7 @@ void Application::RenderGui()
     ImGui::NewFrame();
 
     const float fps = (iDeltaTime_ > 0.0f) ? (1.0f / iDeltaTime_) : 0.0f;
-    layout_.Render(uiState_, iTime_, fps, framebufferWidth_, framebufferHeight_, iFrame_);
+    layout_.Render(uiState_, iTime_, fps, iFrame_);
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -290,6 +306,8 @@ void Application::OnFramebufferSize(int width, int height)
 {
     framebufferWidth_ = width;
     framebufferHeight_ = height;
+    uiState_.sceneViewportWidth = width;
+    uiState_.sceneViewportHeight = height;
 }
 
 bool Application::ConsumeOpenGLErrors(const char* stage)

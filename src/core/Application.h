@@ -56,14 +56,18 @@ private:
 
     graphics::FullscreenQuadRenderer quadRenderer_;
     shader::ShaderCompilationService shaderCompiler_{quadRenderer_};
+    graphics::FullscreenQuadRenderState renderState_{};
 
     std::string shaderLog_;
+    std::string currentShaderSource_;
 
     std::chrono::steady_clock::time_point previousFrameTime_{};
     float iTime_ = 0.0f;
     float iDeltaTime_ = 0.0f;
     std::uint64_t iFrame_ = 0;
     bool recompileHotkeyDown_ = false;
+    bool playbackHotkeyDown_ = false;
+    bool resetHotkeyDown_ = false;
 };
 
 } // namespace app
