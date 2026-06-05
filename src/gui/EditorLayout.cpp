@@ -6,10 +6,13 @@ namespace gui {
 
 void EditorLayout::Render(EditorLayoutState& state, editor::CodeEditor& codeEditor, float timeSeconds, float fps, std::uint64_t frameIndex)
 {
+    ImVec4 opaqueChildBg = ImGui::GetStyleColorVec4(ImGuiCol_ChildBg);
+    opaqueChildBg.w = 1.0f;
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, opaqueChildBg);
+
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->Pos);
     ImGui::SetNextWindowSize(viewport->Size);
-    ImGui::SetNextWindowBgAlpha(0.0f);
 
     const ImGuiWindowFlags windowFlags =
         ImGuiWindowFlags_NoDecoration |
@@ -18,6 +21,12 @@ void EditorLayout::Render(EditorLayoutState& state, editor::CodeEditor& codeEdit
         ImGuiWindowFlags_NoBackground;
 
     ImGui::Begin("MainLayout", nullptr, windowFlags);
+
+    auto showShortcutTooltip = [](const char* shortcutText) {
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) {
+            ImGui::SetTooltip("%s", shortcutText);
+        }
+    };
 
     if (ImGui::BeginTabBar("MainTabs")) {
         ImGuiTabItemFlags sceneTabFlags = 0;
@@ -36,33 +45,55 @@ void EditorLayout::Render(EditorLayoutState& state, editor::CodeEditor& codeEdit
         if (ImGui::BeginTabItem("Scene", nullptr, sceneTabFlags)) {
             state.currentTab = 0;
 
-            const float controlPanelHeight = 200.0f;
-            ImGui::BeginChild("SceneViewportOverlay", ImVec2(0.0f, -controlPanelHeight), true, ImGuiWindowFlags_NoBackground);
+            const float rowHeight = ImGui::GetFrameHeightWithSpacing();
+            const ImGuiStyle& style = ImGui::GetStyle();
+            const float toolbarHeight = rowHeight * 12.0f + style.ItemSpacing.y * 2.0f + style.WindowPadding.y * 2.0f;
+            ImGui::BeginChild(
+                "SceneViewportOverlay",
+                ImVec2(0.0f, -toolbarHeight),
+                true,
+                ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
             {
                 ImDrawList* drawList = ImGui::GetWindowDrawList();
                 const ImVec2 minPos = ImGui::GetWindowPos();
                 const ImVec2 maxPos = ImVec2(minPos.x + ImGui::GetWindowSize().x, minPos.y + ImGui::GetWindowSize().y);
-                drawList->AddRectFilled(minPos, maxPos, IM_COL32(0, 0, 0, 22));
-                drawList->AddRect(minPos, maxPos, IM_COL32(255, 255, 255, 90), 0.0f, 0, 1.5f);
+                drawList->AddRect(minPos, maxPos, IM_COL32(255, 255, 255, 140), 0.0f, 0, 1.5f);
                 drawList->AddText(ImVec2(minPos.x + 12.0f, minPos.y + 10.0f), IM_COL32(255, 255, 255, 230), "Scene Viewport");
 
+                state.sceneViewportPosX = static_cast<int>(minPos.x);
+                state.sceneViewportPosY = static_cast<int>(minPos.y);
                 state.sceneViewportWidth = static_cast<int>((maxPos.x - minPos.x) > 1.0f ? (maxPos.x - minPos.x) : 1.0f);
                 state.sceneViewportHeight = static_cast<int>((maxPos.y - minPos.y) > 1.0f ? (maxPos.y - minPos.y) : 1.0f);
+
+                const float buttonWidth = 34.0f;
+                const float buttonHeight = ImGui::GetFrameHeight();
+                ImGui::SetCursorScreenPos(ImVec2(maxPos.x - buttonWidth - 10.0f, maxPos.y - buttonHeight - 10.0f));
+                if (ImGui::Button("FS", ImVec2(buttonWidth, buttonHeight))) {
+                    state.requestToggleFullscreen = true;
+                }
+                showShortcutTooltip("F");
             }
             ImGui::EndChild();
 
-            ImGui::BeginChild("SceneControls", ImVec2(0.0f, 0.0f), true);
+            ImGui::BeginChild(
+                "SceneControls",
+                ImVec2(0.0f, toolbarHeight),
+                true,
+                ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
             if (ImGui::Button("Reset Timer")) {
                 state.requestResetTimer = true;
             }
+            showShortcutTooltip("Ctrl+T");
             ImGui::SameLine();
             if (ImGui::Button(state.isPlaying ? "Pause" : "Play")) {
                 state.requestTogglePlayback = true;
             }
+            showShortcutTooltip("Ctrl+Space");
             ImGui::SameLine();
             if (ImGui::Button("Compile")) {
                 state.requestRecompile = true;
             }
+            showShortcutTooltip("Ctrl+F5");
 
             ImGui::Separator();
             ImVec4 statusColor = ImVec4(0.70f, 0.90f, 0.70f, 1.0f);
@@ -95,6 +126,11 @@ void EditorLayout::Render(EditorLayoutState& state, editor::CodeEditor& codeEdit
             ImGui::SetNextItemWidth(90.0f);
             ImGui::InputFloat("##PARAM3_INPUT", &state.param3, 0.1f, 1.0f, "%.2f");
             state.param3 = (state.param3 < 0.0f) ? 0.0f : ((state.param3 > 100.0f) ? 100.0f : state.param3);
+
+            if (state.isFullscreen) {
+                ImGui::Separator();
+                ImGui::TextDisabled("Esc - exit fullscreen");
+            }
             ImGui::EndChild();
 
             ImGui::EndTabItem();
@@ -144,6 +180,7 @@ void EditorLayout::Render(EditorLayoutState& state, editor::CodeEditor& codeEdit
     }
 
     ImGui::End();
+    ImGui::PopStyleColor(1);
 }
 
 } // namespace gui

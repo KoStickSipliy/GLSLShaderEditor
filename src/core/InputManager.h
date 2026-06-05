@@ -17,7 +17,8 @@ enum class ShortcutAction {
     SaveAsFile,
     Compile,
     TogglePlayback,
-    ResetTimer
+    ResetTimer,
+    ToggleFullscreen
 };
 
 class InputManager {
@@ -25,7 +26,7 @@ public:
     std::vector<ShortcutAction> PollActions(GLFWwindow* window);
 
 private:
-    bool previousDown_[10] = {};
+    bool previousDown_[11] = {};
 };
 
 } // namespace core

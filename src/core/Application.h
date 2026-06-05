@@ -49,6 +49,9 @@ private:
     void RequestTabSwitch(int tabIndex);
     void SetLogStatus(const std::string& status, const std::string& text, shader::LogSeverity severity, bool focusLogs);
     bool ValidateResourceSnapshot(const char* stage, const graphics::GLResourceSnapshot& expected, bool focusLogs);
+    void ToggleFullscreen();
+    void EnterFullscreen();
+    void ExitFullscreen();
 
     static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
     void OnFramebufferSize(int width, int height);
@@ -82,6 +85,12 @@ private:
     bool leftMouseDown_ = false;
     float mouseDownX_ = 0.0f;
     float mouseDownY_ = 0.0f;
+    bool isFullscreen_ = false;
+    bool previousEscDown_ = false;
+    int windowedPosX_ = 0;
+    int windowedPosY_ = 0;
+    int windowedWidth_ = 1280;
+    int windowedHeight_ = 720;
 
     graphics::GLResourceSnapshot activeResourceSnapshot_{};
     bool activeResourceSnapshotValid_ = false;

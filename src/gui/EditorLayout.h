@@ -32,8 +32,12 @@ struct EditorLayoutState {
     bool requestSaveFile = false;
     bool requestSaveAsFile = false;
     bool requestTabSwitch = false;
+    bool requestToggleFullscreen = false;
     int requestedTab = 0;
+    bool isFullscreen = false;
 
+    int sceneViewportPosX = 0;
+    int sceneViewportPosY = 0;
     int sceneViewportWidth = 1;
     int sceneViewportHeight = 1;
 };

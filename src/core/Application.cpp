@@ -1,6 +1,7 @@
 #include "core/Application.h"
 
 #include <algorithm>
+#include <cmath>
 #include <iomanip>
 #include <sstream>
 #include <utility>
@@ -250,9 +251,15 @@ void Application::ProcessInput()
 {
     glfwPollEvents();
 
-    if (glfwGetKey(window_, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window_, GLFW_TRUE);
+    const bool escDown = glfwGetKey(window_, GLFW_KEY_ESCAPE) == GLFW_PRESS;
+    if (escDown && !previousEscDown_) {
+        if (isFullscreen_) {
+            ExitFullscreen();
+        } else {
+            glfwSetWindowShouldClose(window_, GLFW_TRUE);
+        }
     }
+    previousEscDown_ = escDown;
 
     const std::vector<core::ShortcutAction> actions = inputManager_.PollActions(window_);
     for (const core::ShortcutAction action : actions) {
@@ -292,6 +299,9 @@ void Application::ProcessInput()
         case core::ShortcutAction::ResetTimer:
             uiState_.requestResetTimer = true;
             RequestTabSwitch(0);
+            break;
+        case core::ShortcutAction::ToggleFullscreen:
+            uiState_.requestToggleFullscreen = true;
             break;
         }
     }
@@ -377,6 +387,11 @@ void Application::UpdateState()
         uiState_.requestResetTimer = false;
     }
 
+    if (uiState_.requestToggleFullscreen) {
+        uiState_.requestToggleFullscreen = false;
+        ToggleFullscreen();
+    }
+
     if (uiState_.requestNewFile) {
         uiState_.requestNewFile = false;
         if (promptSaveIfDirty()) {
@@ -458,6 +473,7 @@ void Application::UpdateState()
     }
 
     uiState_.sourceCharacterCount = codeEditor_.CharacterCount();
+    uiState_.isFullscreen = isFullscreen_;
 }
 
 void Application::UpdateUniforms()
@@ -465,8 +481,13 @@ void Application::UpdateUniforms()
     renderState_.iTime = iTime_;
     renderState_.iDeltaTime = iDeltaTime_;
     renderState_.iFrame = static_cast<int>(iFrame_);
-    renderState_.iResolutionX = static_cast<float>(uiState_.sceneViewportWidth > 0 ? uiState_.sceneViewportWidth : framebufferWidth_);
-    renderState_.iResolutionY = static_cast<float>(uiState_.sceneViewportHeight > 0 ? uiState_.sceneViewportHeight : framebufferHeight_);
+    if (isFullscreen_) {
+        renderState_.iResolutionX = static_cast<float>(framebufferWidth_);
+        renderState_.iResolutionY = static_cast<float>(framebufferHeight_);
+    } else {
+        renderState_.iResolutionX = static_cast<float>(uiState_.sceneViewportWidth > 0 ? uiState_.sceneViewportWidth : framebufferWidth_);
+        renderState_.iResolutionY = static_cast<float>(uiState_.sceneViewportHeight > 0 ? uiState_.sceneViewportHeight : framebufferHeight_);
+    }
     renderState_.param1 = uiState_.param1;
     renderState_.param2 = uiState_.param2;
     renderState_.param3 = uiState_.param3;
@@ -475,8 +496,14 @@ void Application::UpdateUniforms()
     double cursorY = 0.0;
     glfwGetCursorPos(window_, &cursorX, &cursorY);
 
-    const float clampedMouseX = std::clamp(static_cast<float>(cursorX), 0.0f, renderState_.iResolutionX);
-    const float clampedMouseY = std::clamp(renderState_.iResolutionY - static_cast<float>(cursorY), 0.0f, renderState_.iResolutionY);
+    const float localMouseX = isFullscreen_
+        ? static_cast<float>(cursorX)
+        : static_cast<float>(cursorX) - static_cast<float>(uiState_.sceneViewportPosX);
+    const float localMouseY = isFullscreen_
+        ? static_cast<float>(cursorY)
+        : static_cast<float>(cursorY) - static_cast<float>(uiState_.sceneViewportPosY);
+    const float clampedMouseX = std::clamp(localMouseX, 0.0f, renderState_.iResolutionX);
+    const float clampedMouseY = std::clamp(renderState_.iResolutionY - localMouseY, 0.0f, renderState_.iResolutionY);
 
     const bool mousePressed = glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
     if (mousePressed && !leftMouseDown_) {
@@ -495,15 +522,62 @@ void Application::RenderScene()
 {
     glViewport(0, 0, framebufferWidth_, framebufferHeight_);
     glDisable(GL_DEPTH_TEST);
-    glClearColor(0.08f, 0.10f, 0.12f, 1.0f);
+    glClearColor(0.13f, 0.13f, 0.13f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    if (isFullscreen_) {
+        glViewport(0, 0, framebufferWidth_, framebufferHeight_);
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(0, 0, framebufferWidth_, framebufferHeight_);
+        quadRenderer_.Render(renderState_);
+        glDisable(GL_SCISSOR_TEST);
+        ConsumeOpenGLErrors("RenderScene");
+        return;
+    }
+
+    int windowWidth = 1;
+    int windowHeight = 1;
+    glfwGetWindowSize(window_, &windowWidth, &windowHeight);
+
+    const float scaleX = windowWidth > 0 ? static_cast<float>(framebufferWidth_) / static_cast<float>(windowWidth) : 1.0f;
+    const float scaleY = windowHeight > 0 ? static_cast<float>(framebufferHeight_) / static_cast<float>(windowHeight) : 1.0f;
+
+    int viewportX = static_cast<int>(std::round(static_cast<float>(uiState_.sceneViewportPosX) * scaleX));
+    int viewportYTop = static_cast<int>(std::round(static_cast<float>(uiState_.sceneViewportPosY) * scaleY));
+    int viewportWidth = static_cast<int>(std::round(static_cast<float>(uiState_.sceneViewportWidth) * scaleX));
+    int viewportHeight = static_cast<int>(std::round(static_cast<float>(uiState_.sceneViewportHeight) * scaleY));
+
+    viewportX = (std::max)(0, viewportX);
+    viewportYTop = (std::max)(0, viewportYTop);
+    viewportWidth = (std::max)(1, viewportWidth);
+    viewportHeight = (std::max)(1, viewportHeight);
+
+    if (viewportX >= framebufferWidth_ || viewportYTop >= framebufferHeight_) {
+        ConsumeOpenGLErrors("RenderScene");
+        return;
+    }
+
+    viewportWidth = (std::min)(viewportWidth, framebufferWidth_ - viewportX);
+    viewportHeight = (std::min)(viewportHeight, framebufferHeight_ - viewportYTop);
+
+    int viewportY = framebufferHeight_ - (viewportYTop + viewportHeight);
+    viewportY = (std::max)(0, viewportY);
+    viewportHeight = (std::min)(viewportHeight, framebufferHeight_ - viewportY);
+
+    glViewport(viewportX, viewportY, viewportWidth, viewportHeight);
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(viewportX, viewportY, viewportWidth, viewportHeight);
     quadRenderer_.Render(renderState_);
+    glDisable(GL_SCISSOR_TEST);
     ConsumeOpenGLErrors("RenderScene");
 }
 
 void Application::RenderGui()
 {
+    if (isFullscreen_) {
+        return;
+    }
+
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -622,6 +696,63 @@ bool Application::ConsumeOpenGLErrors(const char* stage)
         severity,
         hasApiError);
     return !hasApiError;
+}
+
+void Application::ToggleFullscreen()
+{
+    if (isFullscreen_) {
+        ExitFullscreen();
+    } else {
+        EnterFullscreen();
+    }
+}
+
+void Application::EnterFullscreen()
+{
+    if (window_ == nullptr || isFullscreen_) {
+        return;
+    }
+
+    glfwGetWindowPos(window_, &windowedPosX_, &windowedPosY_);
+    glfwGetWindowSize(window_, &windowedWidth_, &windowedHeight_);
+
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    if (monitor == nullptr) {
+        return;
+    }
+
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    if (mode == nullptr) {
+        return;
+    }
+
+    glfwSetWindowMonitor(window_, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+    isFullscreen_ = true;
+    uiState_.isFullscreen = true;
+
+    int fbWidth = framebufferWidth_;
+    int fbHeight = framebufferHeight_;
+    glfwGetFramebufferSize(window_, &fbWidth, &fbHeight);
+    OnFramebufferSize(fbWidth, fbHeight);
+}
+
+void Application::ExitFullscreen()
+{
+    if (window_ == nullptr || !isFullscreen_) {
+        return;
+    }
+
+    const int restoreWidth = windowedWidth_ > 0 ? windowedWidth_ : 1280;
+    const int restoreHeight = windowedHeight_ > 0 ? windowedHeight_ : 720;
+
+    glfwSetWindowMonitor(window_, nullptr, windowedPosX_, windowedPosY_, restoreWidth, restoreHeight, 0);
+    isFullscreen_ = false;
+    uiState_.isFullscreen = false;
+
+    int fbWidth = framebufferWidth_;
+    int fbHeight = framebufferHeight_;
+    glfwGetFramebufferSize(window_, &fbWidth, &fbHeight);
+    OnFramebufferSize(fbWidth, fbHeight);
 }
 
 } // namespace app

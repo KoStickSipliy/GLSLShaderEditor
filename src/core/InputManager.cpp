@@ -11,7 +11,7 @@ struct ShortcutBinding {
     bool shift;
 };
 
-constexpr std::array<ShortcutBinding, 10> kBindings{{
+constexpr std::array<ShortcutBinding, 11> kBindings{{
     {core::ShortcutAction::TabScene, GLFW_KEY_1, true, false},
     {core::ShortcutAction::TabCode, GLFW_KEY_2, true, false},
     {core::ShortcutAction::TabLogs, GLFW_KEY_3, true, false},
@@ -22,6 +22,7 @@ constexpr std::array<ShortcutBinding, 10> kBindings{{
     {core::ShortcutAction::Compile, GLFW_KEY_F5, true, false},
     {core::ShortcutAction::TogglePlayback, GLFW_KEY_SPACE, true, false},
     {core::ShortcutAction::ResetTimer, GLFW_KEY_T, true, false},
+    {core::ShortcutAction::ToggleFullscreen, GLFW_KEY_F, false, false},
 }};
 
 bool IsCtrlPressed(GLFWwindow* window)
