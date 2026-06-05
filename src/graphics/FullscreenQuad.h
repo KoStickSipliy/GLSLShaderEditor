@@ -9,10 +9,12 @@ class FullscreenQuad {
 public:
     bool Initialize();
     void Draw() const;
+    bool IsInitialized() const { return isInitialized_; }
 
 private:
     VertexArray vao_;
     VertexBuffer vbo_;
+    bool isInitialized_ = false;
 };
 
 } // namespace graphics

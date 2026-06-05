@@ -45,6 +45,17 @@ void VertexBuffer::Bind() const
     glBindBuffer(target_, id_);
 }
 
+void VertexBuffer::SetData(const void* data, std::size_t sizeInBytes, GLenum usage) const
+{
+    glBindBuffer(target_, id_);
+    glBufferData(target_, static_cast<GLsizeiptr>(sizeInBytes), data, usage);
+}
+
+void VertexBuffer::Unbind(GLenum target)
+{
+    glBindBuffer(target, 0);
+}
+
 void VertexBuffer::Reset()
 {
     if (id_ != 0) {

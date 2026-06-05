@@ -216,6 +216,17 @@ build CMakeFiles\GLSLShaderEditor.dir\src\graphics\FullscreenQuad.cpp.obj: CXX_C
   TARGET_PDB = GLSLShaderEditor.pdb
   TARGET_SUPPORT_DIR = CMakeFiles\GLSLShaderEditor.dir
 
+build CMakeFiles\GLSLShaderEditor.dir\src\graphics\FullscreenQuadRenderer.cpp.obj: CXX_COMPILER__GLSLShaderEditor_unscanned_Debug C$:\Users\linar\Desktop\Куры$ и$ совы\GLSLShaderEditor\src\graphics\FullscreenQuadRenderer.cpp || cmake_object_order_depends_target_GLSLShaderEditor
+  CONFIG = Debug
+  DEFINES = -DIMGUI_IMPL_OPENGL_LOADER_GLAD
+  FLAGS = /DWIN32 /D_WINDOWS /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd /utf-8 /W4 /permissive-
+  INCLUDES = -I"C:\Users\linar\Desktop\Куры и совы\GLSLShaderEditor\include" -I"C:\Users\linar\Desktop\Куры и совы\GLSLShaderEditor\src" -I"C:\Users\linar\Desktop\Куры и совы\GLSLShaderEditor\external\glfw\include" -I"C:\Users\linar\Desktop\Куры и совы\GLSLShaderEditor\external\glad\include" -I"C:\Users\linar\Desktop\Куры и совы\GLSLShaderEditor\external\imgui" -I"C:\Users\linar\Desktop\Куры и совы\GLSLShaderEditor\external\imgui\backends"
+  OBJECT_DIR = CMakeFiles\GLSLShaderEditor.dir
+  OBJECT_FILE_DIR = CMakeFiles\GLSLShaderEditor.dir\src\graphics
+  TARGET_COMPILE_PDB = CMakeFiles\GLSLShaderEditor.dir\
+  TARGET_PDB = GLSLShaderEditor.pdb
+  TARGET_SUPPORT_DIR = CMakeFiles\GLSLShaderEditor.dir
+
 build CMakeFiles\GLSLShaderEditor.dir\src\graphics\Shader.cpp.obj: CXX_COMPILER__GLSLShaderEditor_unscanned_Debug C$:\Users\linar\Desktop\Куры$ и$ совы\GLSLShaderEditor\src\graphics\Shader.cpp || cmake_object_order_depends_target_GLSLShaderEditor
   CONFIG = Debug
   DEFINES = -DIMGUI_IMPL_OPENGL_LOADER_GLAD
@@ -290,7 +301,7 @@ build CMakeFiles\GLSLShaderEditor.dir\src\main.cpp.obj: CXX_COMPILER__GLSLShader
 #############################################
 # Link the executable GLSLShaderEditor.exe
 
-build GLSLShaderEditor.exe: CXX_EXECUTABLE_LINKER__GLSLShaderEditor_Debug CMakeFiles\GLSLShaderEditor.dir\src\core\Application.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\graphics\FullscreenQuad.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\graphics\Shader.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\graphics\ShaderProgram.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\graphics\VertexArray.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\graphics\VertexBuffer.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\gui\EditorLayout.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\main.cpp.obj | external\glfw\src\glfw3.lib glad.lib imgui.lib external\glfw\src\glfw3.lib glad.lib || external\glfw\src\glfw3.lib glad.lib imgui.lib
+build GLSLShaderEditor.exe: CXX_EXECUTABLE_LINKER__GLSLShaderEditor_Debug CMakeFiles\GLSLShaderEditor.dir\src\core\Application.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\graphics\FullscreenQuad.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\graphics\FullscreenQuadRenderer.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\graphics\Shader.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\graphics\ShaderProgram.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\graphics\VertexArray.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\graphics\VertexBuffer.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\gui\EditorLayout.cpp.obj CMakeFiles\GLSLShaderEditor.dir\src\main.cpp.obj | external\glfw\src\glfw3.lib glad.lib imgui.lib external\glfw\src\glfw3.lib glad.lib || external\glfw\src\glfw3.lib glad.lib imgui.lib
   CONFIG = Debug
   FLAGS = /DWIN32 /D_WINDOWS /EHsc /Zi /Ob0 /Od /RTC1 -MDd
   LINK_FLAGS = /machine:x64 /debug /INCREMENTAL /subsystem:console

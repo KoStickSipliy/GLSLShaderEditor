@@ -57,8 +57,12 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -67,7 +71,7 @@
               "RelativeDocumentMoniker": "src\\core\\Application.cpp",
               "ToolTip": "C:\\Users\\linar\\Desktop\\\u041A\u0443\u0440\u044B \u0438 \u0441\u043E\u0432\u044B\\GLSLShaderEditor\\src\\core\\Application.cpp",
               "RelativeToolTip": "src\\core\\Application.cpp",
-              "ViewState": "AgIAAJYAAAAAAAAAAAAcwJsAAAAkAAAAAAAAAA==",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAAKkAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2026-06-04T20:59:29.97Z",
               "EditorCaption": ""
@@ -82,12 +86,7 @@
               "RelativeToolTip": "src\\core\\Application.h",
               "ViewState": "AgIAAAYAAAAAAAAAAAAAAA4AAAAPAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2026-06-04T20:58:26.19Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+              "WhenOpened": "2026-06-04T20:58:26.19Z"
             },
             {
               "$type": "Document",
@@ -99,8 +98,7 @@
               "RelativeToolTip": "src\\graphics\\FullscreenQuad.h",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2026-06-04T20:52:18.699Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-04T20:52:18.699Z"
             },
             {
               "$type": "Document",
@@ -112,8 +110,7 @@
               "RelativeToolTip": "src\\graphics\\FullscreenQuad.cpp",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2026-06-04T20:46:19.216Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-04T20:46:19.216Z"
             },
             {
               "$type": "Document",
@@ -125,8 +122,7 @@
               "RelativeToolTip": "external\\glad\\include\\glad\\gl.h",
               "ViewState": "AgIAAKQAAAAAAAAAAAAWwKwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2026-06-04T20:26:32.835Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-04T20:26:32.835Z"
             },
             {
               "$type": "Document",
@@ -138,8 +134,7 @@
               "RelativeToolTip": "CMakeLists.txt",
               "ViewState": "AgIAABoAAAAAAAAAAAAvwCAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
-              "WhenOpened": "2026-06-04T19:59:58.167Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-04T19:59:58.167Z"
             },
             {
               "$type": "Document",
@@ -151,8 +146,7 @@
               "RelativeToolTip": "src\\main.cpp",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2026-06-04T19:59:20.463Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-04T19:59:20.463Z"
             },
             {
               "$type": "Document",
@@ -164,8 +158,7 @@
               "RelativeToolTip": "src\\graphics\\ShaderProgram.h",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAUAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2026-06-04T20:45:37.543Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-04T20:45:37.543Z"
             },
             {
               "$type": "Document",
@@ -177,8 +170,7 @@
               "RelativeToolTip": "src\\graphics\\VertexArray.h",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2026-06-04T20:44:42.413Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-04T20:44:42.413Z"
             },
             {
               "$type": "Document",
@@ -190,8 +182,7 @@
               "RelativeToolTip": "src\\graphics\\Shader.h",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2026-06-04T20:45:29.864Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-04T20:45:29.864Z"
             },
             {
               "$type": "Document",
@@ -203,8 +194,7 @@
               "RelativeToolTip": "src\\graphics\\VertexBuffer.h",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2026-06-04T20:45:10.239Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-04T20:45:10.239Z"
             },
             {
               "$type": "Document",
@@ -216,8 +206,7 @@
               "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Microsoft\\VC\\v180\\Microsoft.Cpp.WindowsSDK.targets",
               "ViewState": "AgIAAAYAAAAAAAAAAAAAAA4AAAARAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003801|",
-              "WhenOpened": "2026-06-04T20:28:17.386Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-04T20:28:17.386Z"
             }
           ]
         }

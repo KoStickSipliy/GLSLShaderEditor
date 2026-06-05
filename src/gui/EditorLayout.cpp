@@ -9,11 +9,13 @@ void EditorLayout::Render(EditorLayoutState& state, float timeSeconds, float fps
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->Pos);
     ImGui::SetNextWindowSize(viewport->Size);
+    ImGui::SetNextWindowBgAlpha(0.0f);
 
     const ImGuiWindowFlags windowFlags =
         ImGuiWindowFlags_NoDecoration |
         ImGuiWindowFlags_NoMove |
-        ImGuiWindowFlags_NoSavedSettings;
+        ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_NoBackground;
 
     ImGui::Begin("MainLayout", nullptr, windowFlags);
 
@@ -21,6 +23,18 @@ void EditorLayout::Render(EditorLayoutState& state, float timeSeconds, float fps
         if (ImGui::BeginTabItem("Scene")) {
             state.currentTab = 0;
 
+            const float controlPanelHeight = 230.0f;
+            ImGui::BeginChild("SceneViewportOverlay", ImVec2(0.0f, -controlPanelHeight), true, ImGuiWindowFlags_NoBackground);
+            {
+                ImDrawList* drawList = ImGui::GetWindowDrawList();
+                const ImVec2 minPos = ImGui::GetWindowPos();
+                const ImVec2 maxPos = ImVec2(minPos.x + ImGui::GetWindowSize().x, minPos.y + ImGui::GetWindowSize().y);
+                drawList->AddRect(minPos, maxPos, IM_COL32(255, 255, 255, 90), 0.0f, 0, 1.5f);
+                drawList->AddText(ImVec2(minPos.x + 12.0f, minPos.y + 10.0f), IM_COL32(255, 255, 255, 230), "OpenGL Scene Output");
+            }
+            ImGui::EndChild();
+
+            ImGui::BeginChild("SceneControls", ImVec2(0.0f, 0.0f), true);
             if (ImGui::Button("Reset Timer")) {
                 state.requestResetTimer = true;
             }
@@ -58,20 +72,25 @@ void EditorLayout::Render(EditorLayoutState& state, float timeSeconds, float fps
             ImGui::SetNextItemWidth(90.0f);
             ImGui::InputFloat("##PARAM3_INPUT", &state.param3, 0.1f, 1.0f, "%.2f");
             state.param3 = (state.param3 < 0.0f) ? 0.0f : ((state.param3 > 100.0f) ? 100.0f : state.param3);
+            ImGui::EndChild();
 
             ImGui::EndTabItem();
         }
 
         if (ImGui::BeginTabItem("Code")) {
             state.currentTab = 1;
+            ImGui::BeginChild("CodePanel", ImVec2(0.0f, 0.0f), true);
             ImGui::Text("Code editor will be enabled in the next phase.");
             ImGui::Text("Compile button is already routed through explicit action.");
+            ImGui::EndChild();
             ImGui::EndTabItem();
         }
 
         if (ImGui::BeginTabItem("Logs")) {
             state.currentTab = 2;
+            ImGui::BeginChild("LogsPanel", ImVec2(0.0f, 0.0f), true);
             ImGui::TextUnformatted(state.logText.c_str());
+            ImGui::EndChild();
             ImGui::EndTabItem();
         }
 

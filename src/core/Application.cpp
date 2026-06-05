@@ -1,6 +1,7 @@
 #include "core/Application.h"
 
 #include <fstream>
+#include <iomanip>
 #include <sstream>
 
 #include <glad/gl.h>
@@ -10,12 +11,13 @@
 
 namespace {
 
-const char* kVertexShaderSource = R"(#version 330 core
-layout(location = 0) in vec2 aPosition;
-
-void main()
+const char* kBuiltInTestShader = R"(void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
-    gl_Position = vec4(aPosition, 0.0, 1.0);
+    vec2 uv = fragCoord / iResolution.xy;
+    float t = iTime * 0.75;
+    vec3 grad = vec3(uv.x, uv.y, 0.5 + 0.5 * sin(t));
+    vec3 waves = 0.25 * cos(t + uv.xyx * 8.0 + vec3(0.0, 2.0, 4.0));
+    fragColor = vec4(grad + waves, 1.0);
 }
 )";
 
@@ -191,45 +193,12 @@ bool Application::InitializeImGui()
 
 bool Application::CreateScenePipeline()
 {
-    std::string userFragment = ReadUtf8TextFile("shaders/default.glsl");
-    if (userFragment.empty()) {
-        userFragment = R"(
-void mainImage(out vec4 fragColor, in vec2 fragCoord)
-{
-    vec2 uv = fragCoord / iResolution.xy;
-    vec3 col = vec3(uv, 0.5 + 0.5 * sin(iTime));
-    fragColor = vec4(col, 1.0);
-}
-)";
-    }
-
     std::string compileLog;
-
-    if (!vertexShader_.CompileFromSource(GL_VERTEX_SHADER, kVertexShaderSource, compileLog)) {
+    const std::string fragmentSource = BuildFragmentSource(kBuiltInTestShader);
+    if (!quadRenderer_.Initialize(fragmentSource, compileLog)) {
         shaderLog_ = compileLog;
-        uiState_.compileStatus = "Vertex compile failed";
-        uiState_.logText = shaderLog_;
-        return false;
-    }
-
-    const std::string fragmentSource = BuildFragmentSource(userFragment);
-    if (!fragmentShader_.CompileFromSource(GL_FRAGMENT_SHADER, fragmentSource, compileLog)) {
-        shaderLog_ = compileLog;
-        uiState_.compileStatus = "Fragment compile failed";
-        uiState_.logText = shaderLog_;
-        return false;
-    }
-
-    if (!shaderProgram_.Link(vertexShader_, fragmentShader_, compileLog)) {
-        shaderLog_ = compileLog;
-        uiState_.compileStatus = "Link failed";
-        uiState_.logText = shaderLog_;
-        return false;
-    }
-
-    if (!fullscreenQuad_.Initialize()) {
-        uiState_.compileStatus = "Geometry init failed";
-        uiState_.logText = "Fullscreen quad setup failed.";
+        uiState_.compileStatus = "Renderer init failed";
+        uiState_.logText = shaderLog_.empty() ? "Fullscreen renderer setup failed." : shaderLog_;
         return false;
     }
 
@@ -275,8 +244,22 @@ void Application::UpdateState()
 
     if (uiState_.requestRecompile) {
         uiState_.requestRecompile = false;
-        uiState_.compileStatus = "Compile on demand (Phase 2)";
-        uiState_.logText = "Compilation trigger captured in Phase 1.";
+
+        std::string userFragment = ReadUtf8TextFile("shaders/default.glsl");
+        if (userFragment.empty()) {
+            userFragment = kBuiltInTestShader;
+        }
+
+        const std::string fragmentSource = BuildFragmentSource(userFragment);
+        std::string compileLog;
+        if (quadRenderer_.RebuildFragmentShader(fragmentSource, compileLog)) {
+            uiState_.compileStatus = "Compiled";
+            uiState_.logText = "Shader recompiled successfully.";
+        } else {
+            uiState_.compileStatus = "Compile failed";
+            uiState_.logText = compileLog;
+            uiState_.currentTab = 2;
+        }
     }
 }
 
@@ -287,20 +270,22 @@ void Application::UpdateUniforms()
 void Application::RenderScene()
 {
     glViewport(0, 0, framebufferWidth_, framebufferHeight_);
+    glDisable(GL_DEPTH_TEST);
     glClearColor(0.08f, 0.10f, 0.12f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    shaderProgram_.Use();
-    shaderProgram_.SetFloat("iTime", iTime_);
-    shaderProgram_.SetFloat("iDeltaTime", iDeltaTime_);
-    shaderProgram_.SetInt("iFrame", static_cast<int>(iFrame_));
-    shaderProgram_.SetVec2("iResolution", static_cast<float>(framebufferWidth_), static_cast<float>(framebufferHeight_));
-    shaderProgram_.SetVec4("iMouse", 0.0f, 0.0f, 0.0f, 0.0f);
-    shaderProgram_.SetFloat("PARAM1", uiState_.param1);
-    shaderProgram_.SetFloat("PARAM2", uiState_.param2);
-    shaderProgram_.SetFloat("PARAM3", uiState_.param3);
+    graphics::FullscreenQuadRenderState state;
+    state.iTime = iTime_;
+    state.iDeltaTime = iDeltaTime_;
+    state.iFrame = static_cast<int>(iFrame_);
+    state.iResolutionX = static_cast<float>(framebufferWidth_);
+    state.iResolutionY = static_cast<float>(framebufferHeight_);
+    state.param1 = uiState_.param1;
+    state.param2 = uiState_.param2;
+    state.param3 = uiState_.param3;
 
-    fullscreenQuad_.Draw();
+    quadRenderer_.Render(state);
+    ConsumeOpenGLErrors("RenderScene");
 }
 
 void Application::RenderGui()
@@ -314,6 +299,7 @@ void Application::RenderGui()
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    ConsumeOpenGLErrors("RenderGui");
 }
 
 void Application::FramebufferSizeCallback(GLFWwindow* window, int width, int height)
@@ -328,6 +314,26 @@ void Application::OnFramebufferSize(int width, int height)
 {
     framebufferWidth_ = width;
     framebufferHeight_ = height;
+}
+
+bool Application::ConsumeOpenGLErrors(const char* stage)
+{
+    GLenum error = glGetError();
+    if (error == GL_NO_ERROR) {
+        return true;
+    }
+
+    std::ostringstream oss;
+    oss << stage << " OpenGL error(s):";
+    while (error != GL_NO_ERROR) {
+        oss << " 0x" << std::hex << std::uppercase << static_cast<unsigned int>(error);
+        error = glGetError();
+    }
+
+    uiState_.compileStatus = "OpenGL error";
+    uiState_.logText = oss.str();
+    uiState_.currentTab = 2;
+    return false;
 }
 
 } // namespace app

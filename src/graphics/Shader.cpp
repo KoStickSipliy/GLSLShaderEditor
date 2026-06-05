@@ -12,7 +12,9 @@ Shader::~Shader()
 Shader::Shader(Shader&& other) noexcept
 {
     id_ = other.id_;
+    type_ = other.type_;
     other.id_ = 0;
+    other.type_ = 0;
 }
 
 Shader& Shader::operator=(Shader&& other) noexcept
@@ -20,14 +22,17 @@ Shader& Shader::operator=(Shader&& other) noexcept
     if (this != &other) {
         Reset();
         id_ = other.id_;
+        type_ = other.type_;
         other.id_ = 0;
+        other.type_ = 0;
     }
     return *this;
 }
 
-bool Shader::CompileFromSource(GLenum type, const std::string& source, std::string& outLog)
+bool Shader::CompileFromSource(GLenum type, std::string_view source, std::string& outLog)
 {
     Reset();
+    type_ = type;
 
     id_ = glCreateShader(type);
     if (id_ == 0) {
@@ -35,8 +40,9 @@ bool Shader::CompileFromSource(GLenum type, const std::string& source, std::stri
         return false;
     }
 
-    const char* sourcePtr = source.c_str();
-    glShaderSource(id_, 1, &sourcePtr, nullptr);
+    const char* sourcePtr = source.data();
+    const GLint sourceLength = static_cast<GLint>(source.size());
+    glShaderSource(id_, 1, &sourcePtr, &sourceLength);
     glCompileShader(id_);
 
     GLint compiled = GL_FALSE;
@@ -62,6 +68,7 @@ void Shader::Reset()
         glDeleteShader(id_);
         id_ = 0;
     }
+    type_ = 0;
 }
 
 } // namespace graphics

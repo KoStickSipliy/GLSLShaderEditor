@@ -7,9 +7,7 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#include "graphics/FullscreenQuad.h"
-#include "graphics/Shader.h"
-#include "graphics/ShaderProgram.h"
+#include "graphics/FullscreenQuadRenderer.h"
 #include "gui/EditorLayout.h"
 
 namespace app {
@@ -39,6 +37,7 @@ private:
     void UpdateUniforms();
     void RenderScene();
     void RenderGui();
+    bool ConsumeOpenGLErrors(const char* stage);
 
     static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
     void OnFramebufferSize(int width, int height);
@@ -54,10 +53,7 @@ private:
     gui::EditorLayout layout_;
     gui::EditorLayoutState uiState_;
 
-    graphics::Shader vertexShader_;
-    graphics::Shader fragmentShader_;
-    graphics::ShaderProgram shaderProgram_;
-    graphics::FullscreenQuad fullscreenQuad_;
+    graphics::FullscreenQuadRenderer quadRenderer_;
 
     std::string shaderLog_;
 

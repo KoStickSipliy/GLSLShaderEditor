@@ -35,6 +35,11 @@ void VertexArray::Bind() const
     glBindVertexArray(id_);
 }
 
+void VertexArray::Unbind()
+{
+    glBindVertexArray(0);
+}
+
 void VertexArray::Reset()
 {
     if (id_ != 0) {

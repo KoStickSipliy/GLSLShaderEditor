@@ -17,6 +17,10 @@ public:
 
     bool Create();
     void Bind() const;
+    static void Unbind();
+
+    bool IsValid() const { return id_ != 0; }
+    GLuint Id() const { return id_; }
 
 private:
     void Reset();

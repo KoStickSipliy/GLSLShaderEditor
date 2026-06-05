@@ -19,6 +19,12 @@ public:
 
     bool Create(GLenum target, const void* data, std::size_t sizeInBytes, GLenum usage);
     void Bind() const;
+    void SetData(const void* data, std::size_t sizeInBytes, GLenum usage) const;
+    static void Unbind(GLenum target);
+
+    bool IsValid() const { return id_ != 0; }
+    GLuint Id() const { return id_; }
+    GLenum Target() const { return target_; }
 
 private:
     void Reset();

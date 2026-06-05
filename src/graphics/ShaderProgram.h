@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 #include <glad/gl.h>
 
@@ -21,7 +22,11 @@ public:
 
     bool Link(const Shader& vertexShader, const Shader& fragmentShader, std::string& outLog);
 
+    bool IsValid() const { return id_ != 0; }
+    GLuint Id() const { return id_; }
+
     void Use() const;
+    static void Unuse();
 
     void SetFloat(const char* name, float value) const;
     void SetInt(const char* name, int value) const;
@@ -34,6 +39,7 @@ private:
 
 private:
     GLuint id_ = 0;
+    mutable std::unordered_map<std::string, GLint> uniformLocationCache_;
 };
 
 } // namespace graphics

@@ -7,13 +7,11 @@
   },
   "ExpandedNodes": [
     "",
-    "\\external",
     "\\external\\glad",
     "\\external\\glad\\include",
     "\\external\\glad\\include\\glad",
-    "\\src",
-    "\\src\\graphics"
+    "\\src"
   ],
-  "SelectedNode": "\\external\\glad\\include\\glad\\gl.h",
+  "SelectedNode": "\\CMakeLists.txt",
   "PreviewInSolutionExplorer": false
 }

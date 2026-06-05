@@ -6,6 +6,7 @@ file(GLOB_RECURSE NEW_GLOB LIST_DIRECTORIES false "C:/Users/linar/Desktop/Кур
 set(OLD_GLOB
   "C:/Users/linar/Desktop/Куры и совы/GLSLShaderEditor/src/core/Application.cpp"
   "C:/Users/linar/Desktop/Куры и совы/GLSLShaderEditor/src/graphics/FullscreenQuad.cpp"
+  "C:/Users/linar/Desktop/Куры и совы/GLSLShaderEditor/src/graphics/FullscreenQuadRenderer.cpp"
   "C:/Users/linar/Desktop/Куры и совы/GLSLShaderEditor/src/graphics/Shader.cpp"
   "C:/Users/linar/Desktop/Куры и совы/GLSLShaderEditor/src/graphics/ShaderProgram.cpp"
   "C:/Users/linar/Desktop/Куры и совы/GLSLShaderEditor/src/graphics/VertexArray.cpp"
