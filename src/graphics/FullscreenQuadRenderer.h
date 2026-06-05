@@ -19,6 +19,8 @@ struct FullscreenQuadRenderState {
     float iMouseY = 0.0f;
     float iMouseZ = 0.0f;
     float iMouseW = 0.0f;
+    float viewportOriginX = 0.0f;
+    float viewportOriginY = 0.0f;
 
     float param1 = 50.0f;
     float param2 = 50.0f;

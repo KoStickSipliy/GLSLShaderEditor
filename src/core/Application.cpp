@@ -481,41 +481,9 @@ void Application::UpdateUniforms()
     renderState_.iTime = iTime_;
     renderState_.iDeltaTime = iDeltaTime_;
     renderState_.iFrame = static_cast<int>(iFrame_);
-    if (isFullscreen_) {
-        renderState_.iResolutionX = static_cast<float>(framebufferWidth_);
-        renderState_.iResolutionY = static_cast<float>(framebufferHeight_);
-    } else {
-        renderState_.iResolutionX = static_cast<float>(uiState_.sceneViewportWidth > 0 ? uiState_.sceneViewportWidth : framebufferWidth_);
-        renderState_.iResolutionY = static_cast<float>(uiState_.sceneViewportHeight > 0 ? uiState_.sceneViewportHeight : framebufferHeight_);
-    }
     renderState_.param1 = uiState_.param1;
     renderState_.param2 = uiState_.param2;
     renderState_.param3 = uiState_.param3;
-
-    double cursorX = 0.0;
-    double cursorY = 0.0;
-    glfwGetCursorPos(window_, &cursorX, &cursorY);
-
-    const float localMouseX = isFullscreen_
-        ? static_cast<float>(cursorX)
-        : static_cast<float>(cursorX) - static_cast<float>(uiState_.sceneViewportPosX);
-    const float localMouseY = isFullscreen_
-        ? static_cast<float>(cursorY)
-        : static_cast<float>(cursorY) - static_cast<float>(uiState_.sceneViewportPosY);
-    const float clampedMouseX = std::clamp(localMouseX, 0.0f, renderState_.iResolutionX);
-    const float clampedMouseY = std::clamp(renderState_.iResolutionY - localMouseY, 0.0f, renderState_.iResolutionY);
-
-    const bool mousePressed = glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
-    if (mousePressed && !leftMouseDown_) {
-        mouseDownX_ = clampedMouseX;
-        mouseDownY_ = clampedMouseY;
-    }
-    leftMouseDown_ = mousePressed;
-
-    renderState_.iMouseX = clampedMouseX;
-    renderState_.iMouseY = clampedMouseY;
-    renderState_.iMouseZ = mousePressed ? mouseDownX_ : 0.0f;
-    renderState_.iMouseW = mousePressed ? mouseDownY_ : 0.0f;
 }
 
 void Application::RenderScene()
@@ -525,22 +493,55 @@ void Application::RenderScene()
     glClearColor(0.13f, 0.13f, 0.13f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    int windowWidth = 1;
+    int windowHeight = 1;
+    glfwGetWindowSize(window_, &windowWidth, &windowHeight);
+    const float scaleX = windowWidth > 0 ? static_cast<float>(framebufferWidth_) / static_cast<float>(windowWidth) : 1.0f;
+    const float scaleY = windowHeight > 0 ? static_cast<float>(framebufferHeight_) / static_cast<float>(windowHeight) : 1.0f;
+
+    auto buildMouseState = [&](graphics::FullscreenQuadRenderState& stateForRender) {
+        double cursorX = 0.0;
+        double cursorY = 0.0;
+        glfwGetCursorPos(window_, &cursorX, &cursorY);
+
+        const float cursorXfb = static_cast<float>(cursorX) * scaleX;
+        const float cursorYfb = static_cast<float>(cursorY) * scaleY;
+        const float cursorYUp = static_cast<float>(framebufferHeight_) - cursorYfb;
+
+        const float localMouseX = cursorXfb - stateForRender.viewportOriginX;
+        const float localMouseY = cursorYUp - stateForRender.viewportOriginY;
+        const float clampedMouseX = std::clamp(localMouseX, 0.0f, stateForRender.iResolutionX);
+        const float clampedMouseY = std::clamp(localMouseY, 0.0f, stateForRender.iResolutionY);
+
+        const bool mousePressed = glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+        if (mousePressed && !leftMouseDown_) {
+            mouseDownX_ = clampedMouseX;
+            mouseDownY_ = clampedMouseY;
+        }
+        leftMouseDown_ = mousePressed;
+
+        stateForRender.iMouseX = clampedMouseX;
+        stateForRender.iMouseY = clampedMouseY;
+        stateForRender.iMouseZ = mousePressed ? mouseDownX_ : 0.0f;
+        stateForRender.iMouseW = mousePressed ? mouseDownY_ : 0.0f;
+    };
+
     if (isFullscreen_) {
+        graphics::FullscreenQuadRenderState stateForRender = renderState_;
+        stateForRender.iResolutionX = static_cast<float>(framebufferWidth_);
+        stateForRender.iResolutionY = static_cast<float>(framebufferHeight_);
+        stateForRender.viewportOriginX = 0.0f;
+        stateForRender.viewportOriginY = 0.0f;
+        buildMouseState(stateForRender);
+
         glViewport(0, 0, framebufferWidth_, framebufferHeight_);
         glEnable(GL_SCISSOR_TEST);
         glScissor(0, 0, framebufferWidth_, framebufferHeight_);
-        quadRenderer_.Render(renderState_);
+        quadRenderer_.Render(stateForRender);
         glDisable(GL_SCISSOR_TEST);
         ConsumeOpenGLErrors("RenderScene");
         return;
     }
-
-    int windowWidth = 1;
-    int windowHeight = 1;
-    glfwGetWindowSize(window_, &windowWidth, &windowHeight);
-
-    const float scaleX = windowWidth > 0 ? static_cast<float>(framebufferWidth_) / static_cast<float>(windowWidth) : 1.0f;
-    const float scaleY = windowHeight > 0 ? static_cast<float>(framebufferHeight_) / static_cast<float>(windowHeight) : 1.0f;
 
     int viewportX = static_cast<int>(std::round(static_cast<float>(uiState_.sceneViewportPosX) * scaleX));
     int viewportYTop = static_cast<int>(std::round(static_cast<float>(uiState_.sceneViewportPosY) * scaleY));
@@ -564,10 +565,17 @@ void Application::RenderScene()
     viewportY = (std::max)(0, viewportY);
     viewportHeight = (std::min)(viewportHeight, framebufferHeight_ - viewportY);
 
+    graphics::FullscreenQuadRenderState stateForRender = renderState_;
+    stateForRender.iResolutionX = static_cast<float>(viewportWidth);
+    stateForRender.iResolutionY = static_cast<float>(viewportHeight);
+    stateForRender.viewportOriginX = static_cast<float>(viewportX);
+    stateForRender.viewportOriginY = static_cast<float>(viewportY);
+    buildMouseState(stateForRender);
+
     glViewport(viewportX, viewportY, viewportWidth, viewportHeight);
     glEnable(GL_SCISSOR_TEST);
     glScissor(viewportX, viewportY, viewportWidth, viewportHeight);
-    quadRenderer_.Render(renderState_);
+    quadRenderer_.Render(stateForRender);
     glDisable(GL_SCISSOR_TEST);
     ConsumeOpenGLErrors("RenderScene");
 }

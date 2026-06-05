@@ -14,6 +14,7 @@ uniform float iDeltaTime;
 uniform int   iFrame;
 uniform vec2  iResolution;
 uniform vec4  iMouse;
+uniform vec2  uViewportOrigin;
 uniform float u_PARAM1;
 uniform float u_PARAM2;
 uniform float u_PARAM3;
@@ -28,7 +29,7 @@ const char* kInjectedWrapper = R"(
 void main()
 {
     vec4 fragColor = vec4(0.0);
-    vec2 fragCoord = gl_FragCoord.xy;
+    vec2 fragCoord = gl_FragCoord.xy - uViewportOrigin;
     mainImage(fragColor, fragCoord);
     FragColor = fragColor;
 }

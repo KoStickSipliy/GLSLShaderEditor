@@ -78,6 +78,7 @@ void FullscreenQuadRenderer::Render(const FullscreenQuadRenderState& state) cons
     shaderProgram_.SetInt("iFrame", state.iFrame);
     shaderProgram_.SetVec2("iResolution", state.iResolutionX, state.iResolutionY);
     shaderProgram_.SetVec4("iMouse", state.iMouseX, state.iMouseY, state.iMouseZ, state.iMouseW);
+    shaderProgram_.SetVec2("uViewportOrigin", state.viewportOriginX, state.viewportOriginY);
     shaderProgram_.SetFloat("u_PARAM1", state.param1);
     shaderProgram_.SetFloat("u_PARAM2", state.param2);
     shaderProgram_.SetFloat("u_PARAM3", state.param3);
