@@ -29,6 +29,10 @@ if(NOT EXISTS "${CMAKE_SOURCE_DIR}/external/imgui/imgui.h")
     message(FATAL_ERROR "Missing Dear ImGui. Vendor it to external/imgui")
 endif()
 
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/external/ImGuiColorTextEdit/TextEditor.h")
+    message(FATAL_ERROR "Missing ImGuiColorTextEdit. Vendor it to external/ImGuiColorTextEdit")
+endif()
+
 add_subdirectory(external/glfw)
 
 add_library(glad STATIC
@@ -46,10 +50,12 @@ add_library(imgui STATIC
     external/imgui/imgui_widgets.cpp
     external/imgui/backends/imgui_impl_glfw.cpp
     external/imgui/backends/imgui_impl_opengl3.cpp
+    external/ImGuiColorTextEdit/TextEditor.cpp
 )
 target_include_directories(imgui PUBLIC
     external/imgui
     external/imgui/backends
+    external/ImGuiColorTextEdit
 )
 target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)
 target_link_libraries(imgui PUBLIC glfw glad)
@@ -63,6 +69,8 @@ set(APP_SOURCES
     src/graphics/VertexBuffer.cpp
     src/graphics/FullscreenQuad.cpp
     src/graphics/FullscreenQuadRenderer.cpp
+    src/editor/CodeEditor.cpp
+    src/io/FileDialogs.cpp
     src/gui/EditorLayout.cpp
     src/shader/ShaderSourcePipeline.cpp
     src/shader/LineRemapper.cpp
@@ -81,6 +89,7 @@ target_link_libraries(GLSLShaderEditor PRIVATE
     glad
     imgui
     opengl32
+    comdlg32
 )
 
 set_target_properties(GLSLShaderEditor PROPERTIES

@@ -4,7 +4,7 @@
 
 namespace gui {
 
-void EditorLayout::Render(EditorLayoutState& state, float timeSeconds, float fps, std::uint64_t frameIndex)
+void EditorLayout::Render(EditorLayoutState& state, editor::CodeEditor& codeEditor, float timeSeconds, float fps, std::uint64_t frameIndex)
 {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->Pos);
@@ -89,13 +89,15 @@ void EditorLayout::Render(EditorLayoutState& state, float timeSeconds, float fps
 
         if (ImGui::BeginTabItem("Code")) {
             state.currentTab = 1;
-            ImGui::BeginChild("CodePanel", ImVec2(0.0f, 0.0f), true);
-            ImGui::Text("Code editor will be enabled in the next phase.");
-            ImGui::Text("Compile button is already routed through explicit action.");
-            ImGui::Separator();
-            ImGui::Text("Last compile: %.3f ms", state.compileDurationMs);
-            ImGui::Text("Character count: %llu", static_cast<unsigned long long>(state.sourceCharacterCount));
-            ImGui::EndChild();
+            codeEditor.Render(
+                state.compileStatus,
+                state.compileDurationMs,
+                state.requestRecompile,
+                state.requestNewFile,
+                state.requestOpenFile,
+                state.requestSaveFile,
+                state.requestSaveAsFile,
+                state.sourceCharacterCount);
             ImGui::EndTabItem();
         }
 

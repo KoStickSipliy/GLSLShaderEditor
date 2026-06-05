@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "editor/CodeEditor.h"
 #include "shader/CompilationTypes.h"
 
 namespace gui {
@@ -26,6 +27,10 @@ struct EditorLayoutState {
     bool requestResetTimer = false;
     bool requestTogglePlayback = false;
     bool requestRecompile = false;
+    bool requestNewFile = false;
+    bool requestOpenFile = false;
+    bool requestSaveFile = false;
+    bool requestSaveAsFile = false;
 
     int sceneViewportWidth = 1;
     int sceneViewportHeight = 1;
@@ -33,7 +38,7 @@ struct EditorLayoutState {
 
 class EditorLayout {
 public:
-    void Render(EditorLayoutState& state, float timeSeconds, float fps, std::uint64_t frameIndex);
+    void Render(EditorLayoutState& state, editor::CodeEditor& codeEditor, float timeSeconds, float fps, std::uint64_t frameIndex);
 };
 
 } // namespace gui

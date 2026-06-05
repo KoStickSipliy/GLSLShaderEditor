@@ -1,6 +1,5 @@
 #include "core/Application.h"
 
-#include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <utility>
@@ -9,22 +8,9 @@
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
+#include <windows.h>
 
-namespace {
-
-std::string ReadUtf8TextFile(const std::string& path)
-{
-    std::ifstream file(path, std::ios::binary);
-    if (!file.is_open()) {
-        return {};
-    }
-
-    std::ostringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
-
-} // namespace
+#include "io/FileDialogs.h"
 
 namespace app {
 
@@ -169,9 +155,19 @@ bool Application::CreateScenePipeline()
     uiState_.logText = "Built-in test shader loaded.";
     uiState_.compileLogs.clear();
     uiState_.compileDurationMs = 0.0;
-    uiState_.sourceCharacterCount = prepared.userCharacterCount;
     uiState_.sceneViewportWidth = framebufferWidth_;
     uiState_.sceneViewportHeight = framebufferHeight_;
+
+    std::string fileSource;
+    std::string fileError;
+    if (io::ReadUtf8TextFile("shaders/default.glsl", fileSource, fileError) && !fileSource.empty()) {
+        codeEditor_.OpenDocument("shaders/default.glsl", fileSource);
+        currentShaderSource_ = fileSource;
+    } else {
+        codeEditor_.NewDocument(currentShaderSource_);
+    }
+
+    uiState_.sourceCharacterCount = codeEditor_.CharacterCount();
     return true;
 }
 
@@ -186,9 +182,16 @@ void Application::ProcessInput()
     const bool ctrlPressed =
         glfwGetKey(window_, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
         glfwGetKey(window_, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+    const bool shiftPressed =
+        glfwGetKey(window_, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+        glfwGetKey(window_, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
     const bool compileChordPressed = ctrlPressed && (glfwGetKey(window_, GLFW_KEY_F5) == GLFW_PRESS);
     const bool playbackChordPressed = ctrlPressed && (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS);
     const bool resetChordPressed = ctrlPressed && (glfwGetKey(window_, GLFW_KEY_T) == GLFW_PRESS);
+    const bool newFileChordPressed = ctrlPressed && (glfwGetKey(window_, GLFW_KEY_N) == GLFW_PRESS);
+    const bool openFileChordPressed = ctrlPressed && (glfwGetKey(window_, GLFW_KEY_O) == GLFW_PRESS);
+    const bool saveFileChordPressed = ctrlPressed && !shiftPressed && (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS);
+    const bool saveAsFileChordPressed = ctrlPressed && shiftPressed && (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS);
 
     if (compileChordPressed && !recompileHotkeyDown_) {
         uiState_.requestRecompile = true;
@@ -204,6 +207,26 @@ void Application::ProcessInput()
         uiState_.requestResetTimer = true;
     }
     resetHotkeyDown_ = resetChordPressed;
+
+    if (newFileChordPressed && !newFileHotkeyDown_) {
+        uiState_.requestNewFile = true;
+    }
+    newFileHotkeyDown_ = newFileChordPressed;
+
+    if (openFileChordPressed && !openFileHotkeyDown_) {
+        uiState_.requestOpenFile = true;
+    }
+    openFileHotkeyDown_ = openFileChordPressed;
+
+    if (saveFileChordPressed && !saveFileHotkeyDown_) {
+        uiState_.requestSaveFile = true;
+    }
+    saveFileHotkeyDown_ = saveFileChordPressed;
+
+    if (saveAsFileChordPressed && !saveAsFileHotkeyDown_) {
+        uiState_.requestSaveAsFile = true;
+    }
+    saveAsFileHotkeyDown_ = saveAsFileChordPressed;
 }
 
 void Application::UpdateTimers()
@@ -223,6 +246,58 @@ void Application::UpdateTimers()
 
 void Application::UpdateState()
 {
+    auto saveCurrentDocument = [&](bool forceSaveAs) -> bool {
+        std::string path = codeEditor_.GetFilePath();
+        if (forceSaveAs || path.empty()) {
+            if (!io::SaveTextFileDialog(path)) {
+                return false;
+            }
+        }
+
+        if (!io::IsSupportedTextExtension(path)) {
+            uiState_.compileStatus = "Save failed";
+            uiState_.logText = "Unsupported file extension. Use .glsl or .txt.";
+            uiState_.currentTab = 2;
+            return false;
+        }
+
+        std::string ioError;
+        if (io::WriteUtf8TextFile(path, codeEditor_.GetText(), ioError)) {
+            codeEditor_.MarkSaved(path);
+            uiState_.compileStatus = "Saved";
+            uiState_.logText = path;
+            uiState_.compileLogs.clear();
+            return true;
+        }
+
+        uiState_.compileStatus = "Save failed";
+        uiState_.logText = ioError;
+        uiState_.currentTab = 2;
+        return false;
+    };
+
+    auto promptSaveIfDirty = [&]() -> bool {
+        if (!codeEditor_.IsDirty()) {
+            return true;
+        }
+
+        const int decision = MessageBoxA(
+            nullptr,
+            "Current file has unsaved changes.\nSave before continuing?",
+            "Unsaved Changes",
+            MB_YESNOCANCEL | MB_ICONWARNING | MB_DEFBUTTON1);
+
+        if (decision == IDCANCEL || decision == 0) {
+            return false;
+        }
+
+        if (decision == IDYES) {
+            return saveCurrentDocument(false);
+        }
+
+        return true;
+    };
+
     if (uiState_.requestTogglePlayback) {
         uiState_.isPlaying = !uiState_.isPlaying;
         uiState_.requestTogglePlayback = false;
@@ -234,10 +309,62 @@ void Application::UpdateState()
         uiState_.requestResetTimer = false;
     }
 
+    if (uiState_.requestNewFile) {
+        uiState_.requestNewFile = false;
+        if (promptSaveIfDirty()) {
+            codeEditor_.NewDocument(shaderCompiler_.BuiltInTestShader());
+            uiState_.compileStatus = "New file";
+            uiState_.logText = "Default shader template inserted.";
+            uiState_.compileLogs.clear();
+        }
+    }
+
+    if (uiState_.requestOpenFile) {
+        uiState_.requestOpenFile = false;
+
+        if (promptSaveIfDirty()) {
+            std::string path;
+            if (io::OpenTextFileDialog(path)) {
+                if (!io::IsSupportedTextExtension(path)) {
+                    uiState_.compileStatus = "Open failed";
+                    uiState_.logText = "Unsupported file extension. Use .glsl or .txt.";
+                    uiState_.currentTab = 2;
+                } else {
+                    std::string text;
+                    std::string ioError;
+                    if (io::ReadUtf8TextFile(path, text, ioError)) {
+                        codeEditor_.OpenDocument(path, text);
+                        uiState_.compileStatus = "Opened";
+                        uiState_.logText = path;
+                        uiState_.compileLogs.clear();
+                    } else {
+                        uiState_.compileStatus = "Open failed";
+                        uiState_.logText = ioError;
+                        uiState_.currentTab = 2;
+                    }
+                }
+            }
+        }
+    }
+
+    if (uiState_.requestSaveFile) {
+        uiState_.requestSaveFile = false;
+        if (!codeEditor_.HasFilePath()) {
+            uiState_.requestSaveAsFile = true;
+        } else {
+            saveCurrentDocument(false);
+        }
+    }
+
+    if (uiState_.requestSaveAsFile) {
+        uiState_.requestSaveAsFile = false;
+        saveCurrentDocument(true);
+    }
+
     if (uiState_.requestRecompile) {
         uiState_.requestRecompile = false;
 
-        std::string userFragment = ReadUtf8TextFile("shaders/default.glsl");
+        std::string userFragment = codeEditor_.GetText();
         if (userFragment.empty()) {
             userFragment = currentShaderSource_.empty() ? shaderCompiler_.BuiltInTestShader() : currentShaderSource_;
         }
@@ -255,6 +382,8 @@ void Application::UpdateState()
             currentShaderSource_ = userFragment;
         }
     }
+
+    uiState_.sourceCharacterCount = codeEditor_.CharacterCount();
 }
 
 void Application::UpdateUniforms()
@@ -287,7 +416,7 @@ void Application::RenderGui()
     ImGui::NewFrame();
 
     const float fps = (iDeltaTime_ > 0.0f) ? (1.0f / iDeltaTime_) : 0.0f;
-    layout_.Render(uiState_, iTime_, fps, iFrame_);
+    layout_.Render(uiState_, codeEditor_, iTime_, fps, iFrame_);
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -7,6 +7,7 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#include "editor/CodeEditor.h"
 #include "graphics/FullscreenQuadRenderer.h"
 #include "gui/EditorLayout.h"
 #include "shader/ShaderCompilationService.h"
@@ -53,6 +54,7 @@ private:
 
     gui::EditorLayout layout_;
     gui::EditorLayoutState uiState_;
+    editor::CodeEditor codeEditor_;
 
     graphics::FullscreenQuadRenderer quadRenderer_;
     shader::ShaderCompilationService shaderCompiler_{quadRenderer_};
@@ -68,6 +70,10 @@ private:
     bool recompileHotkeyDown_ = false;
     bool playbackHotkeyDown_ = false;
     bool resetHotkeyDown_ = false;
+    bool newFileHotkeyDown_ = false;
+    bool openFileHotkeyDown_ = false;
+    bool saveFileHotkeyDown_ = false;
+    bool saveAsFileHotkeyDown_ = false;
 };
 
 } // namespace app
