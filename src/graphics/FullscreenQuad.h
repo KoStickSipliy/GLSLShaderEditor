@@ -8,6 +8,7 @@ namespace graphics {
 class FullscreenQuad {
 public:
     bool Initialize();
+    void Shutdown();
     void Draw() const;
     bool IsInitialized() const { return isInitialized_; }
 

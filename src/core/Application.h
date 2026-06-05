@@ -11,6 +11,7 @@
 #include "core/PersistentConfig.h"
 #include "editor/CodeEditor.h"
 #include "graphics/FullscreenQuadRenderer.h"
+#include "graphics/GLResourceDiagnostics.h"
 #include "gui/EditorLayout.h"
 #include "shader/ShaderCompilationService.h"
 
@@ -45,6 +46,9 @@ private:
     void RenderScene();
     void RenderGui();
     bool ConsumeOpenGLErrors(const char* stage);
+    void RequestTabSwitch(int tabIndex);
+    void SetLogStatus(const std::string& status, const std::string& text, shader::LogSeverity severity, bool focusLogs);
+    bool ValidateResourceSnapshot(const char* stage, const graphics::GLResourceSnapshot& expected, bool focusLogs);
 
     static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
     void OnFramebufferSize(int width, int height);
@@ -74,6 +78,13 @@ private:
     float iTime_ = 0.0f;
     float iDeltaTime_ = 0.0f;
     std::uint64_t iFrame_ = 0;
+
+    bool leftMouseDown_ = false;
+    float mouseDownX_ = 0.0f;
+    float mouseDownY_ = 0.0f;
+
+    graphics::GLResourceSnapshot activeResourceSnapshot_{};
+    bool activeResourceSnapshotValid_ = false;
 };
 
 } // namespace app

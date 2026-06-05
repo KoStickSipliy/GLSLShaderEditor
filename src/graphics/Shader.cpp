@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include "graphics/GLResourceDiagnostics.h"
+
 namespace graphics {
 
 Shader::~Shader()
@@ -39,6 +41,7 @@ bool Shader::CompileFromSource(GLenum type, std::string_view source, std::string
         outLog = "glCreateShader failed.";
         return false;
     }
+    GLResourceDiagnostics::OnShaderCreated();
 
     const char* sourcePtr = source.data();
     const GLint sourceLength = static_cast<GLint>(source.size());
@@ -66,6 +69,7 @@ void Shader::Reset()
 {
     if (id_ != 0) {
         glDeleteShader(id_);
+        GLResourceDiagnostics::OnShaderDestroyed();
         id_ = 0;
     }
     type_ = 0;

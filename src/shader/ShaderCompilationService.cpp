@@ -2,15 +2,16 @@
 
 #include <chrono>
 
+#include "graphics/GLResourceDiagnostics.h"
+
 namespace {
 
 const char* kBuiltInTestShader = R"(void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
+    float T = iTime * PARAM1 / 20.0;
     vec2 uv = fragCoord / iResolution.xy;
-    float t = iTime * 0.75;
-    vec3 grad = vec3(uv.x, uv.y, 0.5 + 0.5 * sin(t));
-    vec3 waves = 0.25 * cos(t + uv.xyx * 8.0 + vec3(0.0, 2.0, 4.0));
-    fragColor = vec4(grad + waves, 1.0);
+    vec3 col = 0.5 + 0.5 * cos(T + uv.xyx + vec3(0.0, 2.0, 4.0));
+    fragColor = vec4(col, 1.0);
 }
 )";
 
@@ -32,6 +33,7 @@ CompileReport ShaderCompilationService::CompileAndHotSwap(const std::string& use
 {
     CompileReport report;
     const PreparedFragmentSource preparedSource = sourcePipeline_.BuildFragmentSource(userSource);
+    const graphics::GLResourceSnapshot beforeSnapshot = graphics::GLResourceDiagnostics::Snapshot();
 
     report.generatedFragmentSource = preparedSource.generatedSource;
     report.sourceCharacterCount = preparedSource.userCharacterCount;
@@ -44,6 +46,16 @@ CompileReport ShaderCompilationService::CompileAndHotSwap(const std::string& use
     report.success = success;
     report.durationMs = std::chrono::duration<double, std::milli>(end - start).count();
     report.entries = lineRemapper_.Remap(rawCompilerLog, preparedSource.remapContext);
+    const graphics::GLResourceSnapshot afterSnapshot = graphics::GLResourceDiagnostics::Snapshot();
+    if (!graphics::GLResourceDiagnostics::Matches(beforeSnapshot, afterSnapshot)) {
+        CompileLogEntry entry;
+        entry.severity = LogSeverity::Warning;
+        entry.line = -1;
+        entry.message = "Resource snapshot mismatch after compile: before(" +
+            graphics::GLResourceDiagnostics::ToString(beforeSnapshot) + "), after(" +
+            graphics::GLResourceDiagnostics::ToString(afterSnapshot) + ")";
+        report.entries.push_back(entry);
+    }
     report.mergedLogText = lineRemapper_.MergeToText(report.entries);
     report.statusText = success ? "Compiled" : "Compile failed";
 

@@ -1,5 +1,7 @@
 #include "graphics/VertexBuffer.h"
 
+#include "graphics/GLResourceDiagnostics.h"
+
 namespace graphics {
 
 VertexBuffer::~VertexBuffer()
@@ -34,6 +36,7 @@ bool VertexBuffer::Create(GLenum target, const void* data, std::size_t sizeInByt
     if (id_ == 0) {
         return false;
     }
+    GLResourceDiagnostics::OnVertexBufferCreated();
 
     glBindBuffer(target_, id_);
     glBufferData(target_, static_cast<GLsizeiptr>(sizeInBytes), data, usage);
@@ -60,6 +63,7 @@ void VertexBuffer::Reset()
 {
     if (id_ != 0) {
         glDeleteBuffers(1, &id_);
+        GLResourceDiagnostics::OnVertexBufferDestroyed();
         id_ = 0;
     }
 }

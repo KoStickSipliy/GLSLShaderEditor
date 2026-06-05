@@ -1,5 +1,7 @@
 #include "graphics/VertexArray.h"
 
+#include "graphics/GLResourceDiagnostics.h"
+
 namespace graphics {
 
 VertexArray::~VertexArray()
@@ -27,6 +29,9 @@ bool VertexArray::Create()
 {
     Reset();
     glGenVertexArrays(1, &id_);
+    if (id_ != 0) {
+        GLResourceDiagnostics::OnVertexArrayCreated();
+    }
     return id_ != 0;
 }
 
@@ -44,6 +49,7 @@ void VertexArray::Reset()
 {
     if (id_ != 0) {
         glDeleteVertexArrays(1, &id_);
+        GLResourceDiagnostics::OnVertexArrayDestroyed();
         id_ = 0;
     }
 }

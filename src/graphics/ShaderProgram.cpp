@@ -3,6 +3,8 @@
 #include <utility>
 #include <vector>
 
+#include "graphics/GLResourceDiagnostics.h"
+
 namespace graphics {
 
 ShaderProgram::~ShaderProgram()
@@ -39,6 +41,7 @@ bool ShaderProgram::Link(const Shader& vertexShader, const Shader& fragmentShade
         outLog = "glCreateProgram failed.";
         return false;
     }
+    GLResourceDiagnostics::OnProgramCreated();
 
     glAttachShader(id_, vertexShader.Id());
     glAttachShader(id_, fragmentShader.Id());
@@ -146,6 +149,7 @@ void ShaderProgram::Reset()
 {
     if (id_ != 0) {
         glDeleteProgram(id_);
+        GLResourceDiagnostics::OnProgramDestroyed();
         id_ = 0;
     }
     uniformLocationCache_.clear();

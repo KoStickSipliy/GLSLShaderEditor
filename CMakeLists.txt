@@ -69,6 +69,8 @@ set(APP_SOURCES
     src/graphics/ShaderProgram.cpp
     src/graphics/VertexArray.cpp
     src/graphics/VertexBuffer.cpp
+    src/graphics/GLDebug.cpp
+    src/graphics/GLResourceDiagnostics.cpp
     src/graphics/FullscreenQuad.cpp
     src/graphics/FullscreenQuadRenderer.cpp
     src/editor/CodeEditor.cpp

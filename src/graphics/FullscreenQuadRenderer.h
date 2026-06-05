@@ -29,6 +29,7 @@ class FullscreenQuadRenderer {
 public:
     bool Initialize(const std::string& fragmentShaderSource, std::string& outLog);
     bool RebuildFragmentShader(const std::string& fragmentShaderSource, std::string& outLog);
+    void Shutdown();
     void Render(const FullscreenQuadRenderState& state) const;
 
     bool IsInitialized() const { return initialized_; }

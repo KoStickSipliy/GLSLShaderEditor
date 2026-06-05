@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <sstream>
 #include <utility>
+#include <vector>
 
 #include <glad/gl.h>
 #include <imgui.h>
@@ -11,6 +12,7 @@
 #include <backends/imgui_impl_opengl3.h>
 #include <windows.h>
 
+#include "graphics/GLDebug.h"
 #include "io/FileDialogs.h"
 
 namespace app {
@@ -64,6 +66,10 @@ void Application::Shutdown()
 {
     SavePersistentState();
 
+    quadRenderer_.Shutdown();
+    ValidateResourceSnapshot("Shutdown", graphics::GLResourceSnapshot{}, false);
+    activeResourceSnapshotValid_ = false;
+
     if (imguiInitialized_) {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
@@ -92,6 +98,9 @@ bool Application::InitializeWindow()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifndef NDEBUG
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+#endif
 
     window_ = glfwCreateWindow(framebufferWidth_, framebufferHeight_, "GLSL Shader Editor", nullptr, nullptr);
     if (window_ == nullptr) {
@@ -114,6 +123,7 @@ bool Application::InitializeOpenGL()
     }
 
     glViewport(0, 0, framebufferWidth_, framebufferHeight_);
+    graphics::InitializeGLDebugOutput();
     return true;
 }
 
@@ -199,9 +209,11 @@ bool Application::CreateScenePipeline()
     std::string compileLog;
     if (!quadRenderer_.Initialize(prepared.generatedSource, compileLog)) {
         shaderLog_ = compileLog;
-        uiState_.compileStatus = "Renderer init failed";
-        uiState_.logText = shaderLog_.empty() ? "Fullscreen renderer setup failed." : shaderLog_;
-        uiState_.compileLogs.clear();
+        SetLogStatus(
+            "Renderer init failed",
+            shaderLog_.empty() ? "Fullscreen renderer setup failed." : shaderLog_,
+            shader::LogSeverity::Error,
+            false);
         return false;
     }
 
@@ -211,6 +223,8 @@ bool Application::CreateScenePipeline()
     uiState_.compileDurationMs = 0.0;
     uiState_.sceneViewportWidth = framebufferWidth_;
     uiState_.sceneViewportHeight = framebufferHeight_;
+    activeResourceSnapshot_ = graphics::GLResourceDiagnostics::Snapshot();
+    activeResourceSnapshotValid_ = true;
 
     std::string startupPath = persistentState_.lastOpenedFile;
     if (startupPath.empty()) {
@@ -240,49 +254,44 @@ void Application::ProcessInput()
         glfwSetWindowShouldClose(window_, GLFW_TRUE);
     }
 
-    auto requestTabSwitch = [&](int tabIndex) {
-        uiState_.requestTabSwitch = true;
-        uiState_.requestedTab = tabIndex;
-    };
-
     const std::vector<core::ShortcutAction> actions = inputManager_.PollActions(window_);
     for (const core::ShortcutAction action : actions) {
         switch (action) {
         case core::ShortcutAction::TabScene:
-            requestTabSwitch(0);
+            RequestTabSwitch(0);
             break;
         case core::ShortcutAction::TabCode:
-            requestTabSwitch(1);
+            RequestTabSwitch(1);
             break;
         case core::ShortcutAction::TabLogs:
-            requestTabSwitch(2);
+            RequestTabSwitch(2);
             break;
         case core::ShortcutAction::NewFile:
             uiState_.requestNewFile = true;
-            requestTabSwitch(1);
+            RequestTabSwitch(1);
             break;
         case core::ShortcutAction::OpenFile:
             uiState_.requestOpenFile = true;
-            requestTabSwitch(1);
+            RequestTabSwitch(1);
             break;
         case core::ShortcutAction::SaveFile:
             uiState_.requestSaveFile = true;
-            requestTabSwitch(1);
+            RequestTabSwitch(1);
             break;
         case core::ShortcutAction::SaveAsFile:
             uiState_.requestSaveAsFile = true;
-            requestTabSwitch(1);
+            RequestTabSwitch(1);
             break;
         case core::ShortcutAction::Compile:
             uiState_.requestRecompile = true;
             break;
         case core::ShortcutAction::TogglePlayback:
             uiState_.requestTogglePlayback = true;
-            requestTabSwitch(0);
+            RequestTabSwitch(0);
             break;
         case core::ShortcutAction::ResetTimer:
             uiState_.requestResetTimer = true;
-            requestTabSwitch(0);
+            RequestTabSwitch(0);
             break;
         }
     }
@@ -314,11 +323,11 @@ void Application::UpdateState()
         }
 
         if (!io::IsSupportedTextExtension(path)) {
-            uiState_.compileStatus = "Save failed";
-            uiState_.logText = "Unsupported file extension. Use .glsl or .txt.";
-            uiState_.currentTab = 2;
-            uiState_.requestTabSwitch = true;
-            uiState_.requestedTab = 2;
+            SetLogStatus(
+                "Save failed",
+                "Unsupported file extension. Use .glsl or .txt.",
+                shader::LogSeverity::Error,
+                true);
             return false;
         }
 
@@ -331,11 +340,7 @@ void Application::UpdateState()
             return true;
         }
 
-        uiState_.compileStatus = "Save failed";
-        uiState_.logText = ioError;
-        uiState_.currentTab = 2;
-        uiState_.requestTabSwitch = true;
-        uiState_.requestedTab = 2;
+        SetLogStatus("Save failed", ioError, shader::LogSeverity::Error, true);
         return false;
     };
 
@@ -389,11 +394,11 @@ void Application::UpdateState()
             std::string path;
             if (io::OpenTextFileDialog(path)) {
                 if (!io::IsSupportedTextExtension(path)) {
-                    uiState_.compileStatus = "Open failed";
-                    uiState_.logText = "Unsupported file extension. Use .glsl or .txt.";
-                    uiState_.currentTab = 2;
-                    uiState_.requestTabSwitch = true;
-                    uiState_.requestedTab = 2;
+                    SetLogStatus(
+                        "Open failed",
+                        "Unsupported file extension. Use .glsl or .txt.",
+                        shader::LogSeverity::Error,
+                        true);
                 } else {
                     std::string text;
                     std::string ioError;
@@ -403,11 +408,7 @@ void Application::UpdateState()
                         uiState_.logText = path;
                         uiState_.compileLogs.clear();
                     } else {
-                        uiState_.compileStatus = "Open failed";
-                        uiState_.logText = ioError;
-                        uiState_.currentTab = 2;
-                        uiState_.requestTabSwitch = true;
-                        uiState_.requestedTab = 2;
+                        SetLogStatus("Open failed", ioError, shader::LogSeverity::Error, true);
                     }
                 }
             }
@@ -446,11 +447,13 @@ void Application::UpdateState()
         uiState_.logText = report.mergedLogText;
 
         if (!report.success) {
-            uiState_.currentTab = 2;
-            uiState_.requestTabSwitch = true;
-            uiState_.requestedTab = 2;
+            RequestTabSwitch(2);
         } else {
             currentShaderSource_ = userFragment;
+        }
+
+        if (activeResourceSnapshotValid_) {
+            ValidateResourceSnapshot("Recompile", activeResourceSnapshot_, true);
         }
     }
 
@@ -467,6 +470,25 @@ void Application::UpdateUniforms()
     renderState_.param1 = uiState_.param1;
     renderState_.param2 = uiState_.param2;
     renderState_.param3 = uiState_.param3;
+
+    double cursorX = 0.0;
+    double cursorY = 0.0;
+    glfwGetCursorPos(window_, &cursorX, &cursorY);
+
+    const float clampedMouseX = std::clamp(static_cast<float>(cursorX), 0.0f, renderState_.iResolutionX);
+    const float clampedMouseY = std::clamp(renderState_.iResolutionY - static_cast<float>(cursorY), 0.0f, renderState_.iResolutionY);
+
+    const bool mousePressed = glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+    if (mousePressed && !leftMouseDown_) {
+        mouseDownX_ = clampedMouseX;
+        mouseDownY_ = clampedMouseY;
+    }
+    leftMouseDown_ = mousePressed;
+
+    renderState_.iMouseX = clampedMouseX;
+    renderState_.iMouseY = clampedMouseY;
+    renderState_.iMouseZ = mousePressed ? mouseDownX_ : 0.0f;
+    renderState_.iMouseW = mousePressed ? mouseDownY_ : 0.0f;
 }
 
 void Application::RenderScene()
@@ -510,32 +532,96 @@ void Application::OnFramebufferSize(int width, int height)
     uiState_.sceneViewportHeight = height;
 }
 
-bool Application::ConsumeOpenGLErrors(const char* stage)
+void Application::RequestTabSwitch(int tabIndex)
 {
-    GLenum error = glGetError();
-    if (error == GL_NO_ERROR) {
+    uiState_.requestTabSwitch = true;
+    uiState_.requestedTab = tabIndex;
+}
+
+void Application::SetLogStatus(const std::string& status, const std::string& text, shader::LogSeverity severity, bool focusLogs)
+{
+    uiState_.compileStatus = status;
+    uiState_.logText = text;
+    uiState_.compileLogs.clear();
+
+    shader::CompileLogEntry entry;
+    entry.severity = severity;
+    entry.line = -1;
+    entry.message = text;
+    uiState_.compileLogs.push_back(std::move(entry));
+
+    if (focusLogs) {
+        RequestTabSwitch(2);
+    }
+}
+
+bool Application::ValidateResourceSnapshot(const char* stage, const graphics::GLResourceSnapshot& expected, bool focusLogs)
+{
+    const graphics::GLResourceSnapshot current = graphics::GLResourceDiagnostics::Snapshot();
+    if (graphics::GLResourceDiagnostics::Matches(current, expected)) {
         return true;
     }
 
     std::ostringstream oss;
-    oss << stage << " OpenGL error(s):";
-    while (error != GL_NO_ERROR) {
-        oss << " 0x" << std::hex << std::uppercase << static_cast<unsigned int>(error);
-        error = glGetError();
+    oss << stage << " resource mismatch. expected("
+        << graphics::GLResourceDiagnostics::ToString(expected) << "), got("
+        << graphics::GLResourceDiagnostics::ToString(current) << ")";
+
+    if (focusLogs) {
+        SetLogStatus("Resource warning", oss.str(), shader::LogSeverity::Warning, true);
+    } else {
+        std::string line = oss.str() + "\n";
+        OutputDebugStringA(line.c_str());
     }
 
-    uiState_.compileStatus = "OpenGL error";
-    uiState_.logText = oss.str();
-    uiState_.compileLogs.clear();
-    shader::CompileLogEntry entry;
-    entry.severity = shader::LogSeverity::Error;
-    entry.line = -1;
-    entry.message = uiState_.logText;
-    uiState_.compileLogs.push_back(std::move(entry));
-    uiState_.currentTab = 2;
-    uiState_.requestTabSwitch = true;
-    uiState_.requestedTab = 2;
     return false;
+}
+
+bool Application::ConsumeOpenGLErrors(const char* stage)
+{
+    std::string apiErrorMessage;
+    const bool hasApiError = graphics::DrainOpenGLErrors(stage, apiErrorMessage);
+    const std::vector<graphics::GLDebugMessage> debugMessages = graphics::ConsumeGLDebugMessages();
+
+    bool hasDebugIssue = false;
+    for (const graphics::GLDebugMessage& message : debugMessages) {
+        if (message.severity == graphics::GLDebugSeverity::Warning ||
+            message.severity == graphics::GLDebugSeverity::Error) {
+            hasDebugIssue = true;
+            break;
+        }
+    }
+
+    if (!hasApiError && !hasDebugIssue) {
+        return true;
+    }
+
+    std::ostringstream oss;
+    bool hasAnyMessage = false;
+    if (hasApiError) {
+        oss << apiErrorMessage;
+        hasAnyMessage = true;
+    }
+
+    for (const graphics::GLDebugMessage& message : debugMessages) {
+        if (message.severity == graphics::GLDebugSeverity::Info) {
+            continue;
+        }
+        if (hasAnyMessage) {
+            oss << '\n';
+        }
+        const char* severityText = message.severity == graphics::GLDebugSeverity::Error ? "ERROR" : "WARNING";
+        oss << stage << " GL debug " << severityText << " [" << message.id << "]: " << message.text;
+        hasAnyMessage = true;
+    }
+
+    const shader::LogSeverity severity = hasApiError ? shader::LogSeverity::Error : shader::LogSeverity::Warning;
+    SetLogStatus(
+        hasApiError ? "OpenGL error" : "OpenGL warning",
+        oss.str(),
+        severity,
+        hasApiError);
+    return !hasApiError;
 }
 
 } // namespace app

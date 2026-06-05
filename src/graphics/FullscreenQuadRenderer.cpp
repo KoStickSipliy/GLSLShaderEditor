@@ -57,6 +57,15 @@ bool FullscreenQuadRenderer::RebuildFragmentShader(const std::string& fragmentSh
     return true;
 }
 
+void FullscreenQuadRenderer::Shutdown()
+{
+    initialized_ = false;
+    shaderProgram_ = ShaderProgram{};
+    fragmentShader_ = Shader{};
+    vertexShader_ = Shader{};
+    fullscreenQuad_.Shutdown();
+}
+
 void FullscreenQuadRenderer::Render(const FullscreenQuadRenderState& state) const
 {
     if (!initialized_) {
@@ -69,9 +78,9 @@ void FullscreenQuadRenderer::Render(const FullscreenQuadRenderState& state) cons
     shaderProgram_.SetInt("iFrame", state.iFrame);
     shaderProgram_.SetVec2("iResolution", state.iResolutionX, state.iResolutionY);
     shaderProgram_.SetVec4("iMouse", state.iMouseX, state.iMouseY, state.iMouseZ, state.iMouseW);
-    shaderProgram_.SetFloat("PARAM1", state.param1);
-    shaderProgram_.SetFloat("PARAM2", state.param2);
-    shaderProgram_.SetFloat("PARAM3", state.param3);
+    shaderProgram_.SetFloat("u_PARAM1", state.param1);
+    shaderProgram_.SetFloat("u_PARAM2", state.param2);
+    shaderProgram_.SetFloat("u_PARAM3", state.param3);
     fullscreenQuad_.Draw();
     ShaderProgram::Unuse();
 }

@@ -38,6 +38,13 @@ bool FullscreenQuad::Initialize()
     return true;
 }
 
+void FullscreenQuad::Shutdown()
+{
+    isInitialized_ = false;
+    vbo_ = VertexBuffer{};
+    vao_ = VertexArray{};
+}
+
 void FullscreenQuad::Draw() const
 {
     if (!isInitialized_) {
