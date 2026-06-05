@@ -86,6 +86,13 @@ bool FullscreenQuadRenderer::BuildProgram(const std::string& fragmentShaderSourc
         return false;
     }
 
+    outProgram.Use();
+    if (!outProgram.Validate(outLog)) {
+        ShaderProgram::Unuse();
+        return false;
+    }
+    ShaderProgram::Unuse();
+
     outLog.clear();
     return true;
 }

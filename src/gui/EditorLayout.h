@@ -1,7 +1,11 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 #include <string>
+#include <vector>
+
+#include "shader/CompilationTypes.h"
 
 namespace gui {
 
@@ -15,6 +19,9 @@ struct EditorLayoutState {
 
     std::string compileStatus = "Idle";
     std::string logText;
+    std::vector<shader::CompileLogEntry> compileLogs;
+    double compileDurationMs = 0.0;
+    std::size_t sourceCharacterCount = 0;
 
     bool requestResetTimer = false;
     bool requestTogglePlayback = false;

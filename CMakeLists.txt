@@ -54,8 +54,19 @@ target_include_directories(imgui PUBLIC
 target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)
 target_link_libraries(imgui PUBLIC glfw glad)
 
-file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS
-    src/*.cpp
+set(APP_SOURCES
+    src/main.cpp
+    src/core/Application.cpp
+    src/graphics/Shader.cpp
+    src/graphics/ShaderProgram.cpp
+    src/graphics/VertexArray.cpp
+    src/graphics/VertexBuffer.cpp
+    src/graphics/FullscreenQuad.cpp
+    src/graphics/FullscreenQuadRenderer.cpp
+    src/gui/EditorLayout.cpp
+    src/shader/ShaderSourcePipeline.cpp
+    src/shader/LineRemapper.cpp
+    src/shader/ShaderCompilationService.cpp
 )
 
 add_executable(GLSLShaderEditor

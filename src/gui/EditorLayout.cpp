@@ -49,6 +49,7 @@ void EditorLayout::Render(EditorLayoutState& state, float timeSeconds, float fps
 
             ImGui::Separator();
             ImGui::Text("Status: %s", state.compileStatus.c_str());
+            ImGui::Text("Compile: %.3f ms", state.compileDurationMs);
             ImGui::Text("Time: %.3f", timeSeconds);
             ImGui::Text("Resolution: %d x %d", viewportWidth, viewportHeight);
             ImGui::Text("FPS: %.1f", fps);
@@ -82,6 +83,9 @@ void EditorLayout::Render(EditorLayoutState& state, float timeSeconds, float fps
             ImGui::BeginChild("CodePanel", ImVec2(0.0f, 0.0f), true);
             ImGui::Text("Code editor will be enabled in the next phase.");
             ImGui::Text("Compile button is already routed through explicit action.");
+            ImGui::Separator();
+            ImGui::Text("Last compile: %.3f ms", state.compileDurationMs);
+            ImGui::Text("Character count: %llu", static_cast<unsigned long long>(state.sourceCharacterCount));
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
@@ -89,7 +93,24 @@ void EditorLayout::Render(EditorLayoutState& state, float timeSeconds, float fps
         if (ImGui::BeginTabItem("Logs")) {
             state.currentTab = 2;
             ImGui::BeginChild("LogsPanel", ImVec2(0.0f, 0.0f), true);
-            ImGui::TextUnformatted(state.logText.c_str());
+            if (state.compileLogs.empty()) {
+                ImGui::TextUnformatted(state.logText.c_str());
+            } else {
+                for (const shader::CompileLogEntry& entry : state.compileLogs) {
+                    const char* sev = "INFO";
+                    if (entry.severity == shader::LogSeverity::Warning) {
+                        sev = "WARNING";
+                    } else if (entry.severity == shader::LogSeverity::Error) {
+                        sev = "ERROR";
+                    }
+
+                    if (entry.line > 0) {
+                        ImGui::Text("[%s] line %d: %s", sev, entry.line, entry.message.c_str());
+                    } else {
+                        ImGui::Text("[%s] %s", sev, entry.message.c_str());
+                    }
+                }
+            }
             ImGui::EndChild();
             ImGui::EndTabItem();
         }

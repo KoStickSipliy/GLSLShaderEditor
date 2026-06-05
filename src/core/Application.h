@@ -9,6 +9,7 @@
 
 #include "graphics/FullscreenQuadRenderer.h"
 #include "gui/EditorLayout.h"
+#include "shader/ShaderCompilationService.h"
 
 namespace app {
 
@@ -54,6 +55,7 @@ private:
     gui::EditorLayoutState uiState_;
 
     graphics::FullscreenQuadRenderer quadRenderer_;
+    shader::ShaderCompilationService shaderCompiler_{quadRenderer_};
 
     std::string shaderLog_;
 
@@ -61,6 +63,7 @@ private:
     float iTime_ = 0.0f;
     float iDeltaTime_ = 0.0f;
     std::uint64_t iFrame_ = 0;
+    bool recompileHotkeyDown_ = false;
 };
 
 } // namespace app

@@ -1,9 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"C:/Users/linar/Desktop/\u041a\u0443\u0440\u044b \u0438 \u0441\u043e\u0432\u044b/GLSLShaderEditor/out/build/x64-Debug/cmake_install.cmake",
-		"C:/Users/linar/Desktop/\u041a\u0443\u0440\u044b \u0438 \u0441\u043e\u0432\u044b/GLSLShaderEditor/out/build/x64-Debug/external/glfw/cmake_install.cmake",
-		"C:/Users/linar/Desktop/\u041a\u0443\u0440\u044b \u0438 \u0441\u043e\u0432\u044b/GLSLShaderEditor/out/build/x64-Debug/external/glfw/src/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

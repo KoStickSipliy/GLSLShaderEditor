@@ -21,6 +21,7 @@ public:
     ShaderProgram& operator=(ShaderProgram&& other) noexcept;
 
     bool Link(const Shader& vertexShader, const Shader& fragmentShader, std::string& outLog);
+    bool Validate(std::string& outLog) const;
 
     bool IsValid() const { return id_ != 0; }
     GLuint Id() const { return id_; }

@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <utility>
 
 #include <glad/gl.h>
 #include <imgui.h>
@@ -10,16 +11,6 @@
 #include <backends/imgui_impl_opengl3.h>
 
 namespace {
-
-const char* kBuiltInTestShader = R"(void mainImage(out vec4 fragColor, in vec2 fragCoord)
-{
-    vec2 uv = fragCoord / iResolution.xy;
-    float t = iTime * 0.75;
-    vec3 grad = vec3(uv.x, uv.y, 0.5 + 0.5 * sin(t));
-    vec3 waves = 0.25 * cos(t + uv.xyx * 8.0 + vec3(0.0, 2.0, 4.0));
-    fragColor = vec4(grad + waves, 1.0);
-}
-)";
 
 std::string ReadUtf8TextFile(const std::string& path)
 {
@@ -31,35 +22,6 @@ std::string ReadUtf8TextFile(const std::string& path)
     std::ostringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();
-}
-
-std::string BuildFragmentSource(const std::string& userSource)
-{
-    const char* injectedPrefix = R"(#version 330 core
-out vec4 FragColor;
-
-uniform float iTime;
-uniform float iDeltaTime;
-uniform int   iFrame;
-uniform vec2  iResolution;
-uniform vec4  iMouse;
-uniform float PARAM1;
-uniform float PARAM2;
-uniform float PARAM3;
-
-)";
-
-    const char* injectedWrapper = R"(
-void main()
-{
-    vec4 fragColor = vec4(0.0);
-    vec2 fragCoord = gl_FragCoord.xy;
-    mainImage(fragColor, fragCoord);
-    FragColor = fragColor;
-}
-)";
-
-    return std::string(injectedPrefix) + userSource + injectedWrapper;
 }
 
 } // namespace
@@ -105,8 +67,6 @@ bool Application::Initialize()
         return false;
     }
 
-    uiState_.compileStatus = "Compiled";
-    uiState_.logText = "Phase 1 boot successful.";
     previousFrameTime_ = std::chrono::steady_clock::now();
     return true;
 }
@@ -193,15 +153,22 @@ bool Application::InitializeImGui()
 
 bool Application::CreateScenePipeline()
 {
+    const shader::PreparedFragmentSource prepared = shaderCompiler_.BuildBuiltInPreparedSource();
+
     std::string compileLog;
-    const std::string fragmentSource = BuildFragmentSource(kBuiltInTestShader);
-    if (!quadRenderer_.Initialize(fragmentSource, compileLog)) {
+    if (!quadRenderer_.Initialize(prepared.generatedSource, compileLog)) {
         shaderLog_ = compileLog;
         uiState_.compileStatus = "Renderer init failed";
         uiState_.logText = shaderLog_.empty() ? "Fullscreen renderer setup failed." : shaderLog_;
+        uiState_.compileLogs.clear();
         return false;
     }
 
+    uiState_.compileStatus = "Compiled";
+    uiState_.logText = "Built-in test shader loaded.";
+    uiState_.compileLogs.clear();
+    uiState_.compileDurationMs = 0.0;
+    uiState_.sourceCharacterCount = prepared.userCharacterCount;
     return true;
 }
 
@@ -212,6 +179,15 @@ void Application::ProcessInput()
     if (glfwGetKey(window_, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window_, GLFW_TRUE);
     }
+
+    const bool ctrlPressed =
+        glfwGetKey(window_, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+        glfwGetKey(window_, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+    const bool compileChordPressed = ctrlPressed && (glfwGetKey(window_, GLFW_KEY_F5) == GLFW_PRESS);
+    if (compileChordPressed && !recompileHotkeyDown_) {
+        uiState_.requestRecompile = true;
+    }
+    recompileHotkeyDown_ = compileChordPressed;
 }
 
 void Application::UpdateTimers()
@@ -247,17 +223,17 @@ void Application::UpdateState()
 
         std::string userFragment = ReadUtf8TextFile("shaders/default.glsl");
         if (userFragment.empty()) {
-            userFragment = kBuiltInTestShader;
+            userFragment = shaderCompiler_.BuiltInTestShader();
         }
 
-        const std::string fragmentSource = BuildFragmentSource(userFragment);
-        std::string compileLog;
-        if (quadRenderer_.RebuildFragmentShader(fragmentSource, compileLog)) {
-            uiState_.compileStatus = "Compiled";
-            uiState_.logText = "Shader recompiled successfully.";
-        } else {
-            uiState_.compileStatus = "Compile failed";
-            uiState_.logText = compileLog;
+        const shader::CompileReport report = shaderCompiler_.CompileAndHotSwap(userFragment);
+        uiState_.compileStatus = report.statusText;
+        uiState_.compileDurationMs = report.durationMs;
+        uiState_.sourceCharacterCount = report.sourceCharacterCount;
+        uiState_.compileLogs = report.entries;
+        uiState_.logText = report.mergedLogText;
+
+        if (!report.success) {
             uiState_.currentTab = 2;
         }
     }
@@ -332,6 +308,12 @@ bool Application::ConsumeOpenGLErrors(const char* stage)
 
     uiState_.compileStatus = "OpenGL error";
     uiState_.logText = oss.str();
+    uiState_.compileLogs.clear();
+    shader::CompileLogEntry entry;
+    entry.severity = shader::LogSeverity::Error;
+    entry.line = -1;
+    entry.message = uiState_.logText;
+    uiState_.compileLogs.push_back(std::move(entry));
     uiState_.currentTab = 2;
     return false;
 }

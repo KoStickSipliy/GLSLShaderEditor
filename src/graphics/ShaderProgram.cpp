@@ -64,6 +64,30 @@ bool ShaderProgram::Link(const Shader& vertexShader, const Shader& fragmentShade
     return false;
 }
 
+bool ShaderProgram::Validate(std::string& outLog) const
+{
+    if (id_ == 0) {
+        outLog = "Program is not created.";
+        return false;
+    }
+
+    glValidateProgram(id_);
+
+    GLint valid = GL_FALSE;
+    glGetProgramiv(id_, GL_VALIDATE_STATUS, &valid);
+    if (valid == GL_TRUE) {
+        outLog.clear();
+        return true;
+    }
+
+    GLint logLength = 0;
+    glGetProgramiv(id_, GL_INFO_LOG_LENGTH, &logLength);
+    std::vector<char> log(static_cast<std::size_t>(logLength > 0 ? logLength : 1));
+    glGetProgramInfoLog(id_, static_cast<GLsizei>(log.size()), nullptr, log.data());
+    outLog.assign(log.data());
+    return false;
+}
+
 void ShaderProgram::Use() const
 {
     glUseProgram(id_);
