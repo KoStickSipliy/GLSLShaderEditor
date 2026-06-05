@@ -7,6 +7,8 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#include "core/InputManager.h"
+#include "core/PersistentConfig.h"
 #include "editor/CodeEditor.h"
 #include "graphics/FullscreenQuadRenderer.h"
 #include "gui/EditorLayout.h"
@@ -32,6 +34,9 @@ private:
     bool InitializeOpenGL();
     bool InitializeImGui();
     bool CreateScenePipeline();
+    void LoadPersistentState();
+    void SavePersistentState() const;
+    static std::string PersistentConfigPath();
 
     void ProcessInput();
     void UpdateTimers();
@@ -55,6 +60,8 @@ private:
     gui::EditorLayout layout_;
     gui::EditorLayoutState uiState_;
     editor::CodeEditor codeEditor_;
+    core::InputManager inputManager_;
+    core::PersistentAppState persistentState_;
 
     graphics::FullscreenQuadRenderer quadRenderer_;
     shader::ShaderCompilationService shaderCompiler_{quadRenderer_};
@@ -67,13 +74,6 @@ private:
     float iTime_ = 0.0f;
     float iDeltaTime_ = 0.0f;
     std::uint64_t iFrame_ = 0;
-    bool recompileHotkeyDown_ = false;
-    bool playbackHotkeyDown_ = false;
-    bool resetHotkeyDown_ = false;
-    bool newFileHotkeyDown_ = false;
-    bool openFileHotkeyDown_ = false;
-    bool saveFileHotkeyDown_ = false;
-    bool saveAsFileHotkeyDown_ = false;
 };
 
 } // namespace app

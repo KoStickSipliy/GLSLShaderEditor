@@ -104,7 +104,7 @@ void CodeEditor::Render(
                 char label[16] = {};
                 snprintf(label, sizeof(label), "%.0f%%", level);
                 if (ImGui::MenuItem(label, nullptr, std::abs(zoomPercent_ - level) < 0.1f)) {
-                    zoomPercent_ = level;
+                    SetZoomPercent(level);
                 }
             }
             ImGui::EndMenu();
@@ -149,6 +149,17 @@ void CodeEditor::Render(
 std::string CodeEditor::GetText() const
 {
     return textEditor_->GetText();
+}
+
+void CodeEditor::SetZoomPercent(float zoomPercent)
+{
+    if (zoomPercent < 50.0f) {
+        zoomPercent_ = 50.0f;
+    } else if (zoomPercent > 200.0f) {
+        zoomPercent_ = 200.0f;
+    } else {
+        zoomPercent_ = zoomPercent;
+    }
 }
 
 void CodeEditor::RefreshCachedText()

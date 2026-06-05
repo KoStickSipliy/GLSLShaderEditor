@@ -63,6 +63,8 @@ target_link_libraries(imgui PUBLIC glfw glad)
 set(APP_SOURCES
     src/main.cpp
     src/core/Application.cpp
+    src/core/InputManager.cpp
+    src/core/PersistentConfig.cpp
     src/graphics/Shader.cpp
     src/graphics/ShaderProgram.cpp
     src/graphics/VertexArray.cpp

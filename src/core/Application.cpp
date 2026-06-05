@@ -1,5 +1,6 @@
 #include "core/Application.h"
 
+#include <algorithm>
 #include <iomanip>
 #include <sstream>
 #include <utility>
@@ -37,6 +38,8 @@ bool Application::Run()
 
 bool Application::Initialize()
 {
+    LoadPersistentState();
+
     if (!InitializeWindow()) {
         return false;
     }
@@ -59,6 +62,8 @@ bool Application::Initialize()
 
 void Application::Shutdown()
 {
+    SavePersistentState();
+
     if (imguiInitialized_) {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
@@ -137,6 +142,55 @@ bool Application::InitializeImGui()
     return true;
 }
 
+void Application::LoadPersistentState()
+{
+    if (!core::LoadPersistentState(PersistentConfigPath(), persistentState_)) {
+        return;
+    }
+
+    framebufferWidth_ = (persistentState_.windowWidth > 320) ? persistentState_.windowWidth : 1280;
+    framebufferHeight_ = (persistentState_.windowHeight > 240) ? persistentState_.windowHeight : 720;
+
+    uiState_.currentTab = std::clamp(persistentState_.currentTab, 0, 2);
+    uiState_.requestTabSwitch = true;
+    uiState_.requestedTab = uiState_.currentTab;
+
+    uiState_.param1 = std::clamp(persistentState_.param1, 0.0f, 100.0f);
+    uiState_.param2 = std::clamp(persistentState_.param2, 0.0f, 100.0f);
+    uiState_.param3 = std::clamp(persistentState_.param3, 0.0f, 100.0f);
+    uiState_.isPlaying = persistentState_.playback;
+
+    codeEditor_.SetZoomPercent(persistentState_.editorZoom);
+}
+
+void Application::SavePersistentState() const
+{
+    core::PersistentAppState state = persistentState_;
+    if (window_ != nullptr) {
+        int windowWidth = state.windowWidth;
+        int windowHeight = state.windowHeight;
+        glfwGetWindowSize(window_, &windowWidth, &windowHeight);
+        state.windowWidth = windowWidth;
+        state.windowHeight = windowHeight;
+    }
+
+    state.currentTab = std::clamp(uiState_.currentTab, 0, 2);
+    state.lastOpenedFile = codeEditor_.GetFilePath();
+    state.editorZoom = codeEditor_.GetZoomPercent();
+    state.param1 = uiState_.param1;
+    state.param2 = uiState_.param2;
+    state.param3 = uiState_.param3;
+    state.playback = uiState_.isPlaying;
+
+    std::string saveError;
+    core::SavePersistentState(PersistentConfigPath(), state, saveError);
+}
+
+std::string Application::PersistentConfigPath()
+{
+    return "config/app_state.cfg";
+}
+
 bool Application::CreateScenePipeline()
 {
     const shader::PreparedFragmentSource prepared = shaderCompiler_.BuildBuiltInPreparedSource();
@@ -158,10 +212,17 @@ bool Application::CreateScenePipeline()
     uiState_.sceneViewportWidth = framebufferWidth_;
     uiState_.sceneViewportHeight = framebufferHeight_;
 
+    std::string startupPath = persistentState_.lastOpenedFile;
+    if (startupPath.empty()) {
+        startupPath = "shaders/default.glsl";
+    }
+
     std::string fileSource;
     std::string fileError;
-    if (io::ReadUtf8TextFile("shaders/default.glsl", fileSource, fileError) && !fileSource.empty()) {
-        codeEditor_.OpenDocument("shaders/default.glsl", fileSource);
+    if (io::IsSupportedTextExtension(startupPath) &&
+        io::ReadUtf8TextFile(startupPath, fileSource, fileError) &&
+        !fileSource.empty()) {
+        codeEditor_.OpenDocument(startupPath, fileSource);
         currentShaderSource_ = fileSource;
     } else {
         codeEditor_.NewDocument(currentShaderSource_);
@@ -179,54 +240,52 @@ void Application::ProcessInput()
         glfwSetWindowShouldClose(window_, GLFW_TRUE);
     }
 
-    const bool ctrlPressed =
-        glfwGetKey(window_, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
-        glfwGetKey(window_, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
-    const bool shiftPressed =
-        glfwGetKey(window_, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-        glfwGetKey(window_, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
-    const bool compileChordPressed = ctrlPressed && (glfwGetKey(window_, GLFW_KEY_F5) == GLFW_PRESS);
-    const bool playbackChordPressed = ctrlPressed && (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS);
-    const bool resetChordPressed = ctrlPressed && (glfwGetKey(window_, GLFW_KEY_T) == GLFW_PRESS);
-    const bool newFileChordPressed = ctrlPressed && (glfwGetKey(window_, GLFW_KEY_N) == GLFW_PRESS);
-    const bool openFileChordPressed = ctrlPressed && (glfwGetKey(window_, GLFW_KEY_O) == GLFW_PRESS);
-    const bool saveFileChordPressed = ctrlPressed && !shiftPressed && (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS);
-    const bool saveAsFileChordPressed = ctrlPressed && shiftPressed && (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS);
+    auto requestTabSwitch = [&](int tabIndex) {
+        uiState_.requestTabSwitch = true;
+        uiState_.requestedTab = tabIndex;
+    };
 
-    if (compileChordPressed && !recompileHotkeyDown_) {
-        uiState_.requestRecompile = true;
+    const std::vector<core::ShortcutAction> actions = inputManager_.PollActions(window_);
+    for (const core::ShortcutAction action : actions) {
+        switch (action) {
+        case core::ShortcutAction::TabScene:
+            requestTabSwitch(0);
+            break;
+        case core::ShortcutAction::TabCode:
+            requestTabSwitch(1);
+            break;
+        case core::ShortcutAction::TabLogs:
+            requestTabSwitch(2);
+            break;
+        case core::ShortcutAction::NewFile:
+            uiState_.requestNewFile = true;
+            requestTabSwitch(1);
+            break;
+        case core::ShortcutAction::OpenFile:
+            uiState_.requestOpenFile = true;
+            requestTabSwitch(1);
+            break;
+        case core::ShortcutAction::SaveFile:
+            uiState_.requestSaveFile = true;
+            requestTabSwitch(1);
+            break;
+        case core::ShortcutAction::SaveAsFile:
+            uiState_.requestSaveAsFile = true;
+            requestTabSwitch(1);
+            break;
+        case core::ShortcutAction::Compile:
+            uiState_.requestRecompile = true;
+            break;
+        case core::ShortcutAction::TogglePlayback:
+            uiState_.requestTogglePlayback = true;
+            requestTabSwitch(0);
+            break;
+        case core::ShortcutAction::ResetTimer:
+            uiState_.requestResetTimer = true;
+            requestTabSwitch(0);
+            break;
+        }
     }
-    recompileHotkeyDown_ = compileChordPressed;
-
-    if (playbackChordPressed && !playbackHotkeyDown_) {
-        uiState_.requestTogglePlayback = true;
-    }
-    playbackHotkeyDown_ = playbackChordPressed;
-
-    if (resetChordPressed && !resetHotkeyDown_) {
-        uiState_.requestResetTimer = true;
-    }
-    resetHotkeyDown_ = resetChordPressed;
-
-    if (newFileChordPressed && !newFileHotkeyDown_) {
-        uiState_.requestNewFile = true;
-    }
-    newFileHotkeyDown_ = newFileChordPressed;
-
-    if (openFileChordPressed && !openFileHotkeyDown_) {
-        uiState_.requestOpenFile = true;
-    }
-    openFileHotkeyDown_ = openFileChordPressed;
-
-    if (saveFileChordPressed && !saveFileHotkeyDown_) {
-        uiState_.requestSaveFile = true;
-    }
-    saveFileHotkeyDown_ = saveFileChordPressed;
-
-    if (saveAsFileChordPressed && !saveAsFileHotkeyDown_) {
-        uiState_.requestSaveAsFile = true;
-    }
-    saveAsFileHotkeyDown_ = saveAsFileChordPressed;
 }
 
 void Application::UpdateTimers()
@@ -258,6 +317,8 @@ void Application::UpdateState()
             uiState_.compileStatus = "Save failed";
             uiState_.logText = "Unsupported file extension. Use .glsl or .txt.";
             uiState_.currentTab = 2;
+            uiState_.requestTabSwitch = true;
+            uiState_.requestedTab = 2;
             return false;
         }
 
@@ -273,6 +334,8 @@ void Application::UpdateState()
         uiState_.compileStatus = "Save failed";
         uiState_.logText = ioError;
         uiState_.currentTab = 2;
+        uiState_.requestTabSwitch = true;
+        uiState_.requestedTab = 2;
         return false;
     };
 
@@ -329,6 +392,8 @@ void Application::UpdateState()
                     uiState_.compileStatus = "Open failed";
                     uiState_.logText = "Unsupported file extension. Use .glsl or .txt.";
                     uiState_.currentTab = 2;
+                    uiState_.requestTabSwitch = true;
+                    uiState_.requestedTab = 2;
                 } else {
                     std::string text;
                     std::string ioError;
@@ -341,6 +406,8 @@ void Application::UpdateState()
                         uiState_.compileStatus = "Open failed";
                         uiState_.logText = ioError;
                         uiState_.currentTab = 2;
+                        uiState_.requestTabSwitch = true;
+                        uiState_.requestedTab = 2;
                     }
                 }
             }
@@ -363,6 +430,8 @@ void Application::UpdateState()
 
     if (uiState_.requestRecompile) {
         uiState_.requestRecompile = false;
+        uiState_.compileLogs.clear();
+        uiState_.logText.clear();
 
         std::string userFragment = codeEditor_.GetText();
         if (userFragment.empty()) {
@@ -378,6 +447,8 @@ void Application::UpdateState()
 
         if (!report.success) {
             uiState_.currentTab = 2;
+            uiState_.requestTabSwitch = true;
+            uiState_.requestedTab = 2;
         } else {
             currentShaderSource_ = userFragment;
         }
@@ -462,6 +533,8 @@ bool Application::ConsumeOpenGLErrors(const char* stage)
     entry.message = uiState_.logText;
     uiState_.compileLogs.push_back(std::move(entry));
     uiState_.currentTab = 2;
+    uiState_.requestTabSwitch = true;
+    uiState_.requestedTab = 2;
     return false;
 }
 

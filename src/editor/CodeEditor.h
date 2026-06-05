@@ -34,6 +34,8 @@ public:
     bool HasFilePath() const { return !filePath_.empty(); }
     bool IsDirty() const { return dirty_; }
     std::size_t CharacterCount() const { return textCache_.size(); }
+    float GetZoomPercent() const { return zoomPercent_; }
+    void SetZoomPercent(float zoomPercent);
 
 private:
     void RefreshCachedText();

@@ -20,7 +20,20 @@ void EditorLayout::Render(EditorLayoutState& state, editor::CodeEditor& codeEdit
     ImGui::Begin("MainLayout", nullptr, windowFlags);
 
     if (ImGui::BeginTabBar("MainTabs")) {
-        if (ImGui::BeginTabItem("Scene")) {
+        ImGuiTabItemFlags sceneTabFlags = 0;
+        ImGuiTabItemFlags codeTabFlags = 0;
+        ImGuiTabItemFlags logsTabFlags = 0;
+        if (state.requestTabSwitch) {
+            if (state.requestedTab == 0) {
+                sceneTabFlags |= ImGuiTabItemFlags_SetSelected;
+            } else if (state.requestedTab == 1) {
+                codeTabFlags |= ImGuiTabItemFlags_SetSelected;
+            } else if (state.requestedTab == 2) {
+                logsTabFlags |= ImGuiTabItemFlags_SetSelected;
+            }
+        }
+
+        if (ImGui::BeginTabItem("Scene", nullptr, sceneTabFlags)) {
             state.currentTab = 0;
 
             const float controlPanelHeight = 200.0f;
@@ -87,7 +100,7 @@ void EditorLayout::Render(EditorLayoutState& state, editor::CodeEditor& codeEdit
             ImGui::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Code")) {
+        if (ImGui::BeginTabItem("Code", nullptr, codeTabFlags)) {
             state.currentTab = 1;
             codeEditor.Render(
                 state.compileStatus,
@@ -101,7 +114,7 @@ void EditorLayout::Render(EditorLayoutState& state, editor::CodeEditor& codeEdit
             ImGui::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Logs")) {
+        if (ImGui::BeginTabItem("Logs", nullptr, logsTabFlags)) {
             state.currentTab = 2;
             ImGui::BeginChild("LogsPanel", ImVec2(0.0f, 0.0f), true);
             if (state.compileLogs.empty()) {
@@ -127,6 +140,7 @@ void EditorLayout::Render(EditorLayoutState& state, editor::CodeEditor& codeEdit
         }
 
         ImGui::EndTabBar();
+        state.requestTabSwitch = false;
     }
 
     ImGui::End();

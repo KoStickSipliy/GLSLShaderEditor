@@ -31,6 +31,8 @@ struct EditorLayoutState {
     bool requestOpenFile = false;
     bool requestSaveFile = false;
     bool requestSaveAsFile = false;
+    bool requestTabSwitch = false;
+    int requestedTab = 0;
 
     int sceneViewportWidth = 1;
     int sceneViewportHeight = 1;
